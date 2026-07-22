@@ -5,8 +5,6 @@ import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Account } from "@/models/Account";
 import { Studio } from "@/models/Studio";
-import { getPlan } from "@/lib/plans";
-import { getMyUsedBytes } from "@/lib/account";
 
 async function me() {
   const { userId } = await auth();
@@ -40,46 +38,17 @@ export async function chooseType(
   redirect("/setup");
 }
 
-// Personal: choose a storage plan. Must be >= existing data size.
-export async function selectPlan(planId: string): Promise<void> {
-  const { userId, email } = await me();
-  if (!userId) redirect("/sign-in");
-
-  const plan = getPlan(planId);
-  if (!plan) redirect("/setup");
-
-  const used = await getMyUsedBytes(email);
-  if (plan!.bytes < used) redirect("/setup"); // plan too small for their data
-
-  await connectToDatabase();
-  await Account.findOneAndUpdate(
-    { clerkUserId: userId },
-    {
-      $set: {
-        type: "personal",
-        email,
-        planId: plan!.id,
-        planBytes: plan!.bytes,
-        subscriptionStatus: "active",
-      },
-    },
-    { upsert: true }
-  );
-
-  redirect("/portal");
-}
-
-// Personal: skip choosing a plan → subscription stays pending (no uploads).
-export async function skipPlan(): Promise<void> {
+// Personal: finish setup and go to storage. Uploading is free (Temporary
+// tier); Regular storage is purchased later on the portal, so there's no plan
+// to choose here.
+export async function activatePersonal(): Promise<void> {
   const { userId, email } = await me();
   if (!userId) redirect("/sign-in");
 
   await connectToDatabase();
   await Account.findOneAndUpdate(
     { clerkUserId: userId },
-    {
-      $set: { type: "personal", email, subscriptionStatus: "pending" },
-    },
+    { $set: { type: "personal", email, subscriptionStatus: "active" } },
     { upsert: true }
   );
 

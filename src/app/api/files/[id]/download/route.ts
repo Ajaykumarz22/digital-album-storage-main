@@ -8,6 +8,7 @@ import { s3, S3_BUCKET } from "@/lib/s3";
 import { FileModel } from "@/models/File";
 import { Customer } from "@/models/Customer";
 import { Studio } from "@/models/Studio";
+import { Account } from "@/models/Account";
 
 export async function GET(
   _req: Request,
@@ -32,8 +33,16 @@ export async function GET(
   const email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
 
   if (file.ownerType === "customer") {
-    // A customer's own private file — only the owner may download it.
-    if (!email || file.ownerEmail.toLowerCase() !== email) {
+    // A customer's own private file — only the owner may download it, matched
+    // by the stable Account id (not email).
+    const account = await Account.findOne({ clerkUserId: user.id })
+      .select("_id")
+      .lean<{ _id: mongoose.Types.ObjectId }>();
+    if (
+      !account ||
+      !file.ownerAccountId ||
+      String(account._id) !== String(file.ownerAccountId)
+    ) {
       return NextResponse.json({ error: "Not allowed." }, { status: 403 });
     }
   } else {

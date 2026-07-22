@@ -4,15 +4,16 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { connectToDatabase } from "@/lib/mongodb";
 import { s3, S3_BUCKET, buildUserObjectKey } from "@/lib/s3";
-import { getMyEmail, customerScope } from "@/lib/portal";
+import { customerScope } from "@/lib/portal";
+import { getMyOwner } from "@/lib/account";
 import { resolveFolder } from "@/lib/folders";
 import { FileModel } from "@/models/File";
 
 const MAX_SIZE = 5 * 1024 * 1024 * 1024;
 
 export async function POST(req: Request) {
-  const email = await getMyEmail();
-  if (!email) {
+  const owner = await getMyOwner();
+  if (!owner) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
@@ -34,14 +35,14 @@ export async function POST(req: Request) {
     );
   }
 
-  const folder = await resolveFolder(customerScope(email), folderId);
+  const folder = await resolveFolder(customerScope(owner.accountId), folderId);
   if (!folder.ok) {
     return NextResponse.json({ error: "Invalid folder." }, { status: 400 });
   }
 
   const type = contentType || "application/octet-stream";
   const key = buildUserObjectKey(
-    email,
+    owner.accountId,
     filename,
     `${Date.now()}-${randomUUID().slice(0, 8)}`
   );
@@ -49,7 +50,10 @@ export async function POST(req: Request) {
   await connectToDatabase();
   const fileDoc = await FileModel.create({
     ownerType: "customer",
-    ownerEmail: email,
+    ownerAccountId: owner.accountId,
+    ownerEmail: owner.email,
+    // New uploads land in the free 15-day Temporary tier.
+    tier: "temporary",
     folderId: folder.folderId,
     key,
     filename,

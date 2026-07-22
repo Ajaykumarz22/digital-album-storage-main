@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
-import { getMyEmail, customerScope } from "@/lib/portal";
+import { customerScope } from "@/lib/portal";
+import { getMyOwner } from "@/lib/account";
 import { resolveFolder } from "@/lib/folders";
 import { Folder } from "@/models/Folder";
 
 export async function POST(req: Request) {
-  const email = await getMyEmail();
-  if (!email) {
+  const owner = await getMyOwner();
+  if (!owner) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid folder name." }, { status: 400 });
   }
 
-  const parent = await resolveFolder(customerScope(email), parentId);
+  const parent = await resolveFolder(customerScope(owner.accountId), parentId);
   if (!parent.ok) {
     return NextResponse.json({ error: "Invalid parent folder." }, { status: 400 });
   }
@@ -30,14 +31,15 @@ export async function POST(req: Request) {
   const folder = await Folder.findOneAndUpdate(
     {
       ownerType: "customer",
-      ownerEmail: email,
+      ownerAccountId: owner.accountId,
       parentId: parent.folderId,
       name,
     },
     {
       $setOnInsert: {
         ownerType: "customer",
-        ownerEmail: email,
+        ownerAccountId: owner.accountId,
+        ownerEmail: owner.email,
         parentId: parent.folderId,
         name,
       },

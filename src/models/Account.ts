@@ -19,6 +19,9 @@ const AccountSchema = new Schema(
     // per-studio Customer record for the shared/delivered data only):
     planId: { type: String, default: null },
     planBytes: { type: Number, default: 0 },
+    // Purchased Regular-storage quota in bytes (custom GB, top-up, billed
+    // yearly). Files in the "regular" tier count against this.
+    regularBytes: { type: Number, default: 0 },
 
     // Business accounts:
     businessName: { type: String, default: "" },

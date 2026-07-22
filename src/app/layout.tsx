@@ -33,7 +33,9 @@ export default function RootLayout({
       >
         <body className="min-h-full flex flex-col">
           <Header />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 bg-[whitesmoke] dark:bg-transparent">
+            {children}
+          </main>
         </body>
       </html>
     </ClerkProvider>

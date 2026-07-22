@@ -3,12 +3,12 @@ import mongoose from "mongoose";
 import { HeadObjectCommand } from "@aws-sdk/client-s3";
 import { connectToDatabase } from "@/lib/mongodb";
 import { s3, S3_BUCKET } from "@/lib/s3";
-import { getMyEmail } from "@/lib/portal";
+import { getMyOwner } from "@/lib/account";
 import { FileModel } from "@/models/File";
 
 export async function POST(req: Request) {
-  const email = await getMyEmail();
-  if (!email) {
+  const owner = await getMyOwner();
+  if (!owner) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   const file = await FileModel.findOne({
     _id: fileId,
     ownerType: "customer",
-    ownerEmail: email,
+    ownerAccountId: owner.accountId,
   });
   if (!file) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });

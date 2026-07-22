@@ -24,8 +24,17 @@ const FileSchema = new Schema(
       default: "studio",
       index: true,
     },
-    // Owner's email (lowercased) — the stable identity of the owner.
+    // Owner's email (lowercased) — a mutable DISPLAY hint, not identity.
     ownerEmail: { type: String, default: "", index: true },
+    // Stable internal owner = Account._id. Provider-agnostic identity that
+    // survives email changes and even swapping out the auth provider. This is
+    // what customer-owned data is actually scoped by.
+    ownerAccountId: {
+      type: Schema.Types.ObjectId,
+      ref: "Account",
+      default: null,
+      index: true,
+    },
     // Which folder this file lives in. null = the customer's root.
     folderId: {
       type: Schema.Types.ObjectId,
@@ -43,6 +52,40 @@ const FileSchema = new Schema(
       type: String,
       enum: ["pending", "ready"],
       default: "pending",
+    },
+    // Deep Storage tag (applies to a customer's own files AND to studio-shared
+    // files the customer has tagged — studio files are per-delivery so the tag
+    // is unambiguous):
+    //   "none"      = not selected.
+    //   "selected"  = tagged "Selected for deep storage", waiting for payment.
+    //                 The file STAYS visible where it is.
+    //   "moved"     = archived to Deep Storage; a live copy is kept in place
+    //                 (tagged "Moved to deep").
+    //   "archiving" = paid, sources marked for deletion; worker is freezing then
+    //                 removing them.
+    deepStatus: {
+      type: String,
+      enum: ["none", "selected", "moved", "archiving"],
+      default: "none",
+      index: true,
+    },
+    // If this customer file was COPIED from a studio-shared file, the source
+    // file's id — lets the shared view hide files the customer already took.
+    sourceFileId: {
+      type: Schema.Types.ObjectId,
+      ref: "File",
+      default: null,
+      index: true,
+    },
+    // Which live tier a CUSTOMER-owned file sits in:
+    //   "temporary" = free 15-day landing area (default for new uploads).
+    //   "regular"   = paid permanent storage (counts against purchased quota).
+    // Studio-owned deliveries are inherently temporary (via ownerType).
+    tier: {
+      type: String,
+      enum: ["temporary", "regular"],
+      default: "temporary",
+      index: true,
     },
   },
   { timestamps: true }

@@ -1,10 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { getMyAccount, getMyUsedBytes } from "@/lib/account";
-import { getCurrency } from "@/lib/geo";
-import { getPlan, planPrice } from "@/lib/plans";
-import { cancelPlan } from "./actions";
 
 function formatBytes(bytes: number): string {
   if (!bytes) return "0 MB";
@@ -22,8 +19,6 @@ export default async function AccountPage() {
   const account = await getMyAccount();
   if (!account) redirect("/setup");
 
-  const user = await currentUser();
-  const email = user?.primaryEmailAddress?.emailAddress?.toLowerCase() ?? "";
   const backHref = account.type === "business" ? "/dashboard" : "/portal";
 
   return (
@@ -45,28 +40,15 @@ export default async function AccountPage() {
         />
       ) : (
         <PersonalDetails
-          email={email}
-          planId={account.planId ?? null}
-          status={account.subscriptionStatus}
+          regularBytes={account.regularBytes ?? 0}
         />
       )}
     </div>
   );
 }
 
-async function PersonalDetails({
-  email,
-  planId,
-  status,
-}: {
-  email: string;
-  planId: string | null;
-  status: string;
-}) {
-  const currency = await getCurrency();
-  const used = await getMyUsedBytes(email);
-  const plan = planId ? getPlan(planId) : null;
-  const active = status === "active" && plan;
+async function PersonalDetails({ regularBytes }: { regularBytes: number }) {
+  const used = await getMyUsedBytes();
 
   return (
     <div className="mt-6 space-y-6">
@@ -79,55 +61,26 @@ async function PersonalDetails({
         </div>
         <div className="mt-3 flex items-center justify-between">
           <span className="text-sm text-black/50 dark:text-white/50">
-            Current plan
+            Regular storage
           </span>
           <span className="font-medium">
-            {active ? plan!.label : "No active plan"}
-          </span>
-        </div>
-        {active && (
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-sm text-black/50 dark:text-white/50">
-              Price
-            </span>
-            <span className="font-medium">
-              {planPrice(plan!, currency).ours}/month
-            </span>
-          </div>
-        )}
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-sm text-black/50 dark:text-white/50">
-            Storage used
-          </span>
-          <span className="font-medium">
-            {formatBytes(used)}
-            {active ? ` of ${plan!.label}` : ""}
+            {formatBytes(used)} used of {formatBytes(regularBytes)} purchased
           </span>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <Link
-          href="/setup"
-          className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
-        >
-          {active ? "Change plan" : "Choose a plan"}
-        </Link>
-        {active && (
-          <form action={cancelPlan}>
-            <button className="rounded-md border border-red-500/40 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-500/10">
-              Cancel plan
-            </button>
-          </form>
-        )}
-      </div>
+      <Link
+        href="/portal"
+        className="inline-block rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+      >
+        Manage &amp; buy storage
+      </Link>
 
-      {!active && (
-        <p className="text-sm text-amber-600">
-          Without a plan you can view and download shared files, but you
-          can&apos;t upload your own.
-        </p>
-      )}
+      <p className="text-sm text-black/50 dark:text-white/50">
+        Uploading is free — files land in Temporary storage (auto-delete after
+        15 days). Buy Regular storage from your storage page to keep files
+        permanently.
+      </p>
     </div>
   );
 }

@@ -24,3 +24,14 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Cards & tables read as white surfaces on the whitesmoke page background.
+   Targets the shared card pattern (rounded-lg + border-black/10), so it skips
+   amber/green notices, dashed empty-states, inputs, buttons, and tooltips —
+   which use other classes. Light mode only; dark mode is left untouched. */
+@media (prefers-color-scheme: light) {
+  .rounded-lg.border-black\/10,
+  .rounded-xl.border-black\/10 {
+    background-color: #ffffff;
+  }
+}

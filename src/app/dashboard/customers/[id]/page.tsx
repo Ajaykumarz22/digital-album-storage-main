@@ -5,8 +5,12 @@ import { auth } from "@clerk/nextjs/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { FileModel } from "@/models/File";
 import { Folder } from "@/models/Folder";
+import { ArchiveModel } from "@/models/Archive";
 import { getOwnedCustomer } from "@/lib/studio";
 import { getCurrentRole } from "@/lib/roles";
+import { getCurrency } from "@/lib/geo";
+import ArchiveList, { type ArchiveRow } from "@/components/archives/ArchiveList";
+import InfoHint from "@/components/InfoHint";
 import {
   resolveFolder,
   getBreadcrumb,
@@ -75,6 +79,25 @@ export default async function CustomerPage({
 
   const base = `/dashboard/customers/${String(customer._id)}`;
   const moveTargets = buildFolderPaths(allFolders);
+  const currency = await getCurrency();
+
+  const archiveDocs = await ArchiveModel.find({
+    ownerType: "studio",
+    studioId: customer.studioId,
+    customerId: customer._id,
+    status: { $ne: "deleted" },
+  })
+    .sort({ createdAt: -1 })
+    .select("name fileCount sizeBytes status termYears")
+    .lean();
+  const archives: ArchiveRow[] = archiveDocs.map((a) => ({
+    id: String(a._id),
+    name: a.name,
+    fileCount: a.fileCount,
+    sizeBytes: a.sizeBytes,
+    status: a.status,
+    termYears: a.termYears,
+  }));
 
   const folderRows = folders.map((f) => ({
     id: String(f._id),
@@ -124,34 +147,60 @@ export default async function CustomerPage({
       </section>
 
       <section className="mt-8">
-        {/* Breadcrumb */}
-        <nav className="mb-3 flex flex-wrap items-center gap-1 text-sm">
-          <Link href={base} className="hover:underline">
-            {customer.name || "Home"}
-          </Link>
-          {breadcrumb.map((b) => (
-            <span key={b.id} className="flex items-center gap-1">
-              <span className="text-black/30 dark:text-white/30">/</span>
-              <Link href={`${base}?folder=${b.id}`} className="hover:underline">
-                {b.name}
-              </Link>
-            </span>
-          ))}
-        </nav>
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          Temporary storage (auto deletes after 15 days)
+          <InfoHint text="Files you've delivered to this customer — kept live for instant viewing and download. Move them to Deep Storage to keep them long-term at a much lower cost." />
+        </h2>
 
+        {/* Breadcrumb — only when inside a folder */}
+        {breadcrumb.length > 0 && (
+          <nav className="mb-3 mt-3 flex flex-wrap items-center gap-1 text-sm">
+            <Link href={base} className="hover:underline">
+              Regular storage
+            </Link>
+            {breadcrumb.map((b) => (
+              <span key={b.id} className="flex items-center gap-1">
+                <span className="text-black/30 dark:text-white/30">/</span>
+                <Link href={`${base}?folder=${b.id}`} className="hover:underline">
+                  {b.name}
+                </Link>
+              </span>
+            ))}
+          </nav>
+        )}
+
+        <div className="mt-4">
         <FileBrowser
           currentFolderId={currentFolderId}
           base={base}
           folders={folderRows}
           files={fileRows}
           moveTargets={moveTargets}
+          currency={currency}
           endpoints={{
             move: "/api/items/move",
             folders: "/api/folders",
             delete: "/api/items/delete",
+            archiveQuote: "/api/studio/archive/quote",
+            archiveCreate: "/api/studio/archive/create",
           }}
           baseBody={{ customerId: String(customer._id) }}
         />
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          Deep Storage (cheapest, approx Rs 180/1TB/Month)
+          <InfoHint text="Long-term frozen archives of this customer's delivered files. Browsing is instant; retrieving takes up to 48 hours and is billed separately." />
+        </h2>
+        <div className="mt-4">
+          <ArchiveList
+            archives={archives}
+            browseBase={`${base}/archive`}
+            emptyHint="No archives yet. Select delivered files above and choose “Move to Deep Storage”."
+          />
+        </div>
       </section>
 
       <section className="mt-8 rounded-lg border border-black/10 p-6 dark:border-white/10">

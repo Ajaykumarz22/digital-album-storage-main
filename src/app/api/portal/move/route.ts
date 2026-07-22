@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
-import { getMyEmail, customerScope } from "@/lib/portal";
+import { customerScope } from "@/lib/portal";
+import { getMyOwner } from "@/lib/account";
 import {
   resolveFolder,
   loadAllFolders,
@@ -11,8 +12,8 @@ import { FileModel } from "@/models/File";
 import { Folder } from "@/models/Folder";
 
 export async function POST(req: Request) {
-  const email = await getMyEmail();
-  if (!email) {
+  const owner = await getMyOwner();
+  if (!owner) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Nothing to move." }, { status: 400 });
   }
 
-  const scope = customerScope(email);
+  const scope = customerScope(owner.accountId);
   const target = await resolveFolder(scope, targetFolderId);
   if (!target.ok) {
     return NextResponse.json({ error: "Invalid destination." }, { status: 400 });
@@ -71,13 +72,21 @@ export async function POST(req: Request) {
   await connectToDatabase();
   if (fileIds.length) {
     await FileModel.updateMany(
-      { _id: { $in: fileIds }, ownerType: "customer", ownerEmail: email },
+      {
+        _id: { $in: fileIds },
+        ownerType: "customer",
+        ownerAccountId: owner.accountId,
+      },
       { $set: { folderId: target.folderId } }
     );
   }
   if (folderIds.length) {
     await Folder.updateMany(
-      { _id: { $in: folderIds }, ownerType: "customer", ownerEmail: email },
+      {
+        _id: { $in: folderIds },
+        ownerType: "customer",
+        ownerAccountId: owner.accountId,
+      },
       { $set: { parentId: target.folderId } }
     );
   }

@@ -41,12 +41,14 @@ export function buildObjectKey(
   )}`;
 }
 
-// A customer's own private drive lives under its own namespace, keyed by email.
+// A customer's own private drive lives under its own namespace, keyed by the
+// stable internal Account id (NOT email — so the key never depends on a value
+// that can change). The key is stored on the File record and always reused.
 export function buildUserObjectKey(
-  ownerEmail: string,
+  ownerId: string,
   filename: string,
   uniquePart: string
 ): string {
-  const safeEmail = ownerEmail.replace(/[^a-zA-Z0-9._-]/g, "_");
-  return `user-${safeEmail}/${uniquePart}-${safeName(filename)}`;
+  const safeId = ownerId.replace(/[^a-zA-Z0-9._-]/g, "_");
+  return `user-${safeId}/${uniquePart}-${safeName(filename)}`;
 }

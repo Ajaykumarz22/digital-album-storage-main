@@ -6,12 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "worker": "node --env-file=.env.local --import tsx src/worker/index.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1090.0",
+    "@aws-sdk/lib-storage": "^3.1091.0",
     "@aws-sdk/s3-request-presigner": "^3.1090.0",
     "@clerk/nextjs": "^7.5.20",
+    "archiver": "^8.0.0",
+    "bullmq": "^5.80.9",
+    "ioredis": "^5.11.1",
     "mongoose": "^9.7.4",
     "next": "16.2.10",
     "react": "19.2.4",
@@ -19,12 +24,14 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/archiver": "^8.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   }
 }

@@ -2,38 +2,15 @@ import { redirect } from "next/navigation";
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Customer } from "@/models/Customer";
-import { getMyAccount, getMyUsedBytes } from "@/lib/account";
-import { getCurrency } from "@/lib/geo";
-import { PLANS, planPrice, type Currency } from "@/lib/plans";
-import CurrencySelect from "@/components/CurrencySelect";
-import { chooseType, selectPlan, skipPlan, saveBusiness } from "./actions";
+import { getMyAccount } from "@/lib/account";
+import { chooseType, activatePersonal, saveBusiness } from "./actions";
 
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 MB";
-  const mb = bytes / (1024 * 1024);
-  if (mb < 1024) return `${mb.toFixed(1)} MB`;
-  const gb = mb / 1024;
-  if (gb < 1024) return `${gb.toFixed(1)} GB`;
-  return `${(gb / 1024).toFixed(2)} TB`;
-}
-
-export default async function SetupPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ currency?: string }>;
-}) {
+export default async function SetupPage() {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
   const user = await currentUser();
   const email = user?.primaryEmailAddress?.emailAddress?.toLowerCase() ?? "";
-
-  // Currency: user override (?currency=) wins, else auto-detect from geo.
-  const { currency: currencyParam } = await searchParams;
-  const currency: Currency =
-    currencyParam === "INR" || currencyParam === "USD"
-      ? currencyParam
-      : await getCurrency();
 
   const account = await getMyAccount();
 
@@ -103,14 +80,8 @@ export default async function SetupPage({
         </>
       )}
 
-      {/* Personal — choose a storage plan */}
-      {effectiveType === "personal" && (
-        <PersonalPlans
-          email={email}
-          currentPlanId={account?.planId ?? null}
-          currency={currency}
-        />
-      )}
+      {/* Personal — nothing to buy here; uploads are free (Temporary tier) */}
+      {effectiveType === "personal" && <PersonalSetup />}
 
       {/* Business — details + $0 subscribe */}
       {effectiveType === "business" && (
@@ -123,88 +94,22 @@ export default async function SetupPage({
   );
 }
 
-async function PersonalPlans({
-  email,
-  currentPlanId,
-  currency,
-}: {
-  email: string;
-  currentPlanId: string | null;
-  currency: Currency;
-}) {
-  const used = await getMyUsedBytes(email);
-
+function PersonalSetup() {
   return (
-    <div className="mt-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xl text-black/60 dark:text-white/60">
-          Choose a monthly storage plan — cheaper than Google Drive.
-        </p>
-        <CurrencySelect value={currency} />
-      </div>
-      {used > 0 && (
-        <p className="mt-2 text-base text-amber-600">
-          You&apos;re already using {formatBytes(used)} — pick a plan at least
-          that large.
-        </p>
-      )}
-
-      <div className="mt-6 space-y-3">
-        {PLANS.map((plan) => {
-          const price = planPrice(plan, currency);
-          const tooSmall = plan.bytes < used;
-          const isCurrent = plan.id === currentPlanId;
-          return (
-            <form key={plan.id} action={selectPlan.bind(null, plan.id)}>
-              <button
-                disabled={tooSmall}
-                className={`flex w-full items-center justify-between gap-4 rounded-lg border p-5 text-left transition-colors ${
-                  isCurrent
-                    ? "border-foreground"
-                    : "border-black/10 hover:border-black/30 dark:border-white/10 dark:hover:border-white/30"
-                } ${tooSmall ? "cursor-not-allowed opacity-40" : ""}`}
-              >
-                <div className="flex items-center gap-5">
-                  <span className="w-24 text-xl font-semibold">
-                    {plan.label}
-                  </span>
-                  <span className="text-base text-black/40 line-through dark:text-white/40">
-                    Google One {price.google}/month
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-5">
-                  <span className="text-2xl font-semibold">
-                    {price.ours}
-                    <span className="text-base font-medium text-black/70 dark:text-white/70">
-                      /month
-                    </span>
-                  </span>
-                  {isCurrent ? (
-                    <span className="w-28 text-right text-sm font-medium text-green-600">
-                      Current plan
-                    </span>
-                  ) : tooSmall ? (
-                    <span className="w-28 text-right text-sm font-medium text-red-600">
-                      Too small
-                    </span>
-                  ) : (
-                    <span className="w-28 text-right text-base font-medium text-blue-600">
-                      Select →
-                    </span>
-                  )}
-                </div>
-              </button>
-            </form>
-          );
-        })}
-      </div>
-
-      <div className="mt-8 text-center">
-        <form action={skipPlan}>
-          <button className="text-base text-black/50 hover:underline dark:text-white/50">
-            Skip for now (you can pick a plan later, but you won&apos;t be able
-            to upload)
+    <div className="mx-auto mt-8 max-w-lg">
+      <div className="rounded-xl border border-black/10 p-7 dark:border-white/10">
+        <h2 className="text-2xl font-semibold">You&apos;re all set</h2>
+        <ul className="mt-4 space-y-2 text-base text-black/60 dark:text-white/60">
+          <li>• Uploads are free and land in Temporary storage.</li>
+          <li>• Temporary files auto-delete 15 days after upload.</li>
+          <li>
+            • Keep files by moving them to Regular storage (buy space anytime)
+            or Deep Storage.
+          </li>
+        </ul>
+        <form action={activatePersonal} className="mt-6">
+          <button className="w-full rounded-md bg-foreground px-5 py-3 text-base font-medium text-background hover:opacity-90">
+            Continue to my storage
           </button>
         </form>
       </div>

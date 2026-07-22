@@ -26,6 +26,14 @@ const FolderSchema = new Schema(
       index: true,
     },
     ownerEmail: { type: String, default: "", index: true },
+    // Stable internal owner = Account._id (provider-agnostic). What a customer's
+    // own folders are scoped by; ownerEmail is now just a display hint.
+    ownerAccountId: {
+      type: Schema.Types.ObjectId,
+      ref: "Account",
+      default: null,
+      index: true,
+    },
     parentId: {
       type: Schema.Types.ObjectId,
       ref: "Folder",
@@ -38,10 +46,10 @@ const FolderSchema = new Schema(
 );
 
 // No two folders with the same name under the same parent, per owner+space.
-// (ownerEmail scopes each user's private drive; customerId scopes each
+// (ownerAccountId scopes each user's private drive; customerId scopes each
 // studio's per-customer delivery space.)
 FolderSchema.index(
-  { ownerType: 1, ownerEmail: 1, customerId: 1, parentId: 1, name: 1 },
+  { ownerType: 1, ownerAccountId: 1, customerId: 1, parentId: 1, name: 1 },
   { unique: true }
 );
 

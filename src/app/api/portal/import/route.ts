@@ -5,8 +5,9 @@ import { CopyObjectCommand } from "@aws-sdk/client-s3";
 import { connectToDatabase } from "@/lib/mongodb";
 import { s3, S3_BUCKET, buildUserObjectKey } from "@/lib/s3";
 import { getMyEmail } from "@/lib/portal";
-import { getMyAccount } from "@/lib/account";
+import { getMyAccount, regularUsedBytes } from "@/lib/account";
 import { getMyCustomerAccounts } from "@/lib/customer";
+import { humanBytes } from "@/lib/archivePricing";
 import { FileModel } from "@/models/File";
 import { Folder } from "@/models/Folder";
 
@@ -18,14 +19,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
-  // Must have an active plan to store files in My Drive.
   const account = await getMyAccount();
-  if (account?.subscriptionStatus !== "active") {
-    return NextResponse.json(
-      { error: "Choose a storage plan first to save files to My Drive." },
-      { status: 402 }
-    );
+  if (!account) {
+    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
+  const accountId = String(account._id);
 
   const body = await req.json().catch(() => null);
   const studioSpace = body?.studioSpace as string | undefined;
@@ -51,6 +49,7 @@ export async function POST(req: Request) {
   try {
     root = await Folder.create({
       ownerType: "customer",
+      ownerAccountId: accountId,
       ownerEmail: email,
       parentId: null,
       name,
@@ -91,6 +90,7 @@ export async function POST(req: Request) {
       }
       const created = await Folder.create({
         ownerType: "customer",
+        ownerAccountId: accountId,
         ownerEmail: email,
         parentId,
         name: f.name,
@@ -113,13 +113,28 @@ export async function POST(req: Request) {
     }[]
   >();
 
+  // Quota check — the whole delivery lands in the paid Regular tier.
+  const incoming = files.reduce((s, f) => s + (f.size || 0), 0);
+  const used = await regularUsedBytes(accountId);
+  if (used + incoming > (account.regularBytes ?? 0)) {
+    return NextResponse.json(
+      {
+        error: `Not enough Regular storage — need ${humanBytes(
+          used + incoming - (account.regularBytes ?? 0)
+        )} more. Buy more storage first.`,
+        needMore: true,
+      },
+      { status: 402 }
+    );
+  }
+
   let copied = 0;
   for (const f of files) {
     const targetFolder = f.folderId
       ? map.get(String(f.folderId)) ?? String(root._id)
       : String(root._id);
     const newKey = buildUserObjectKey(
-      email,
+      accountId,
       f.filename,
       `${Date.now()}-${randomUUID().slice(0, 8)}`
     );
@@ -136,6 +151,7 @@ export async function POST(req: Request) {
     }
     await FileModel.create({
       ownerType: "customer",
+      ownerAccountId: accountId,
       ownerEmail: email,
       folderId: targetFolder,
       key: newKey,
@@ -143,6 +159,8 @@ export async function POST(req: Request) {
       contentType: f.contentType,
       size: f.size,
       status: "ready",
+      tier: "regular",
+      sourceFileId: f._id,
     });
     copied++;
   }

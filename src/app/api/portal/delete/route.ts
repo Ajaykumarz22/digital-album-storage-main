@@ -3,14 +3,15 @@ import mongoose from "mongoose";
 import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { connectToDatabase } from "@/lib/mongodb";
 import { s3, S3_BUCKET } from "@/lib/s3";
-import { getMyEmail, customerScope } from "@/lib/portal";
+import { customerScope } from "@/lib/portal";
+import { getMyOwner } from "@/lib/account";
 import { loadAllFolders, collectFolderAndDescendants } from "@/lib/folders";
 import { FileModel } from "@/models/File";
 import { Folder } from "@/models/Folder";
 
 export async function POST(req: Request) {
-  const email = await getMyEmail();
-  if (!email) {
+  const owner = await getMyOwner();
+  if (!owner) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
   }
 
   await connectToDatabase();
-  const scope = customerScope(email);
+  const scope = customerScope(owner.accountId);
   const all = await loadAllFolders(scope);
   const allIds = new Set(all.map((f) => String(f._id)));
   const startFolderIds = folderIds.filter((id) => allIds.has(id));
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
 
   const files = await FileModel.find({
     ownerType: "customer",
-    ownerEmail: email,
+    ownerAccountId: owner.accountId,
     $or: [
       { _id: { $in: fileIds } },
       ...(folderIdArray.length ? [{ folderId: { $in: folderIdArray } }] : []),
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
     await Folder.deleteMany({
       _id: { $in: folderIdArray },
       ownerType: "customer",
-      ownerEmail: email,
+      ownerAccountId: owner.accountId,
     });
   }
 
