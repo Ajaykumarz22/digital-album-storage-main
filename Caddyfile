@@ -5,6 +5,11 @@
 # On the server:
 #   sudo cp Caddyfile /etc/caddy/Caddyfile
 #   sudo systemctl reload caddy
-your-domain.com {
+reelpouches.com {
     reverse_proxy localhost:3000
+}
+
+# Optional: redirect www → apex
+www.reelpouches.com {
+    redir https://reelpouches.com{uri}
 }
