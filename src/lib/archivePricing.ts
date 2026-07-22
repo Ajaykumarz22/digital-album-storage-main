@@ -12,7 +12,7 @@ import type { Currency } from "@/lib/plans";
 const AWS_DEEP_ARCHIVE_USD_PER_TB_MONTH = 0.99; // ~ $0.00099/GB
 const MARKUP_USD_PER_TB_MONTH = 2; // customer deep price = $0.99 + $2 = $2.99/TB/mo
 // USD→INR for display; make dynamic later.
-const USD_TO_INR = 83;
+const USD_TO_INR = 95;
 
 // ---- Restore (retrieval) fee config -----------------------------------------
 // Pulling data BACK costs us AWS egress (~$90/TB) + a retrieval fee. Charged to

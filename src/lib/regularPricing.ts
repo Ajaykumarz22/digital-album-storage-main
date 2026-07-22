@@ -4,7 +4,7 @@ import type { Currency } from "@/lib/plans";
 // Cost basis: iDrive e2 ≈ $6 / TB / month, plus a flat margin. EDIT freely.
 const IDRIVE_USD_PER_TB_MONTH = 6; // your cost
 const MARGIN_USD_PER_TB_MONTH = 1.5; // flat margin
-const USD_TO_INR = 83;
+const USD_TO_INR = 95;
 
 // Customer-facing per-GB monthly rate (billed yearly = ×12).
 // $7.50 / TB / month ⇒ ≈ $0.00732/GB/mo.

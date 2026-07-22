@@ -16,6 +16,7 @@
     "@clerk/nextjs": "^7.5.20",
     "archiver": "^8.0.0",
     "bullmq": "^5.80.9",
+    "geoip-lite": "^1.4.10",
     "ioredis": "^5.11.1",
     "mongoose": "^9.7.4",
     "next": "16.2.10",
@@ -25,6 +26,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/archiver": "^8.0.0",
+    "@types/geoip-lite": "^1.4.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
