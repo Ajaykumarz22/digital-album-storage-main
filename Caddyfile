@@ -1,0 +1,10 @@
+# Caddy reverse proxy — terminates HTTPS (auto Let's Encrypt cert) and forwards
+# to the Next.js server on port 3000. Replace the domain with yours; your
+# domain's DNS A record must point to this EC2 instance's public IP.
+#
+# On the server:
+#   sudo cp Caddyfile /etc/caddy/Caddyfile
+#   sudo systemctl reload caddy
+your-domain.com {
+    reverse_proxy localhost:3000
+}
