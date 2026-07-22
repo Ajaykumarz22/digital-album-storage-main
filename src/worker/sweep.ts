@@ -14,7 +14,7 @@ type ExpiredFile = {
 
 // Delete studio-shared ("Temporary Storage") files that are past their per-file
 // 15-day window. Each file is measured from its OWN upload date. Customer-owned
-// files in paid Regular Storage are never touched here.
+// files in paid Hot Drive are never touched here.
 export async function processSweep(): Promise<void> {
   const cutoff = new Date(Date.now() - TEMP_STORAGE_DAYS * 24 * 60 * 60 * 1000);
 

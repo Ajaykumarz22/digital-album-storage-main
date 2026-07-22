@@ -82,7 +82,7 @@ export function priceIn(quote: ArchiveQuote, currency: Currency): number {
   return currency === "INR" ? quote.inr : quote.usd;
 }
 
-// Our actual Deep Storage price per TB/month (AWS cost + markup), formatted for
+// Our actual Cold Drive price per TB/month (AWS cost + markup), formatted for
 // the landing headline. USD in India converts to INR.
 export function deepArchivePricePerTBMonth(currency: Currency): string {
   const usd = AWS_DEEP_ARCHIVE_USD_PER_TB_MONTH + MARKUP_USD_PER_TB_MONTH;
@@ -92,7 +92,7 @@ export function deepArchivePricePerTBMonth(currency: Currency): string {
 
 export type RestoreQuote = { sizeBytes: number; usd: number; inr: number };
 
-// One-time fee to retrieve a whole archive back from cold storage.
+// One-time fee to retrieve a whole archive back from cold drive.
 export function restoreQuote(sizeBytes: number): RestoreQuote {
   const tb = sizeBytes / BYTES_PER_TB;
   const usd = Math.max(RESTORE_MIN_USD, round2(tb * RESTORE_USD_PER_TB));

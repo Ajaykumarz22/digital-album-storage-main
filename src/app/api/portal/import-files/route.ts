@@ -9,7 +9,7 @@ import { getMyCustomerAccounts } from "@/lib/customer";
 import { humanBytes } from "@/lib/archivePricing";
 import { FileModel } from "@/models/File";
 
-// "Move to Regular storage" from a studio-shared space — copies the selected
+// "Move to Hot drive" from a studio-shared space — copies the selected
 // shared files into the customer's Regular tier. Needs enough purchased quota.
 export async function POST(req: Request) {
   const owner = await getMyOwner();
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
   if (used + incoming > (account.regularBytes ?? 0)) {
     return NextResponse.json(
       {
-        error: `Not enough Regular storage — need ${humanBytes(
+        error: `Not enough Hot drive — need ${humanBytes(
           used + incoming - (account.regularBytes ?? 0)
         )} more. Buy more storage first.`,
         needMore: true,

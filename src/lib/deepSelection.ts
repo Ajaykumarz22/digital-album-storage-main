@@ -28,7 +28,7 @@ function ownerFilter(accountId: string, customerIds: string[]) {
   };
 }
 
-// All files the customer has tagged "selected for deep storage".
+// All files the customer has tagged "selected for cold drive".
 export async function getSelectedDeepFiles(
   accountId: string,
   customerIds: string[]

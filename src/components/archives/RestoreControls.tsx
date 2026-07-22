@@ -82,7 +82,7 @@ export default function RestoreControls({
     return (
       <div className="rounded-lg border border-black/10 p-4 text-sm dark:border-white/10">
         <p className="text-black/60 dark:text-white/60">
-          These files are frozen in cold storage. Retrieving them takes up to 48
+          These files are frozen in cold drive. Retrieving them takes up to 48
           hours and costs <span className="font-medium">{feeLabel}</span>{" "}
           (covers the retrieval + transfer out).
         </p>

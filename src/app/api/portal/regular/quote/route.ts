@@ -6,7 +6,7 @@ import {
   MIN_REGULAR_GB,
 } from "@/lib/regularPricing";
 
-// Price a custom GB amount of Regular storage.
+// Price a custom GB amount of Hot drive.
 export async function POST(req: Request) {
   const owner = await getMyOwner();
   if (!owner) {

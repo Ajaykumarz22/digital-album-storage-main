@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatBytes, formatDate } from "@/lib/format";
 import mongoose from "mongoose";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
@@ -16,23 +17,6 @@ function money(usd: number, inr: number, currency: "USD" | "INR"): string {
   return currency === "INR"
     ? `₹${inr.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
     : `$${usd.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
-}
-
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 MB";
-  const mb = bytes / (1024 * 1024);
-  if (mb < 1024) return `${mb.toFixed(1)} MB`;
-  return `${(mb / 1024).toFixed(2)} GB`;
-}
-
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-function formatDate(d: unknown): string {
-  if (!d) return "—";
-  const x = new Date(d as string);
-  return `${MONTHS[x.getUTCMonth()]} ${x.getUTCDate()}, ${x.getUTCFullYear()}`;
 }
 
 export default async function ArchiveDetailPage({
@@ -76,7 +60,7 @@ export default async function ArchiveDetailPage({
     <div className="mx-auto max-w-4xl space-y-8 px-6 py-12">
       <div>
         <Link href="/portal" className="text-sm text-blue-600 hover:underline">
-          ← Back to My Space
+          ← Back to My Uploads
         </Link>
         <h1 className="mt-3 text-2xl font-semibold">🧊 {archive.name}</h1>
       </div>

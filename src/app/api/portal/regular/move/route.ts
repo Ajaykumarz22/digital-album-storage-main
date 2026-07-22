@@ -9,7 +9,7 @@ import { FileModel } from "@/models/File";
 
 type TempFile = { _id: mongoose.Types.ObjectId; size: number };
 
-// Move a customer's Temporary-tier files into paid Regular storage. Checks the
+// Move a customer's Temporary-tier files into paid Hot drive. Checks the
 // purchased quota; blocks (402) with a "buy more" prompt if there isn't room.
 export async function POST(req: Request) {
   const account = await getMyAccount();
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     const shortBy = used + incoming - capacity;
     return NextResponse.json(
       {
-        error: `Not enough Regular storage — you need ${humanBytes(
+        error: `Not enough Hot drive — you need ${humanBytes(
           shortBy
         )} more. Buy more storage first.`,
         needMore: true,

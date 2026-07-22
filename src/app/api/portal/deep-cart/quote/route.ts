@@ -4,7 +4,7 @@ import { getMyCustomerAccounts } from "@/lib/customer";
 import { getSelectedDeepFiles } from "@/lib/deepSelection";
 import { quoteArchive } from "@/lib/archivePricing";
 
-// Price the whole "selected for deep storage" set for a chosen term.
+// Price the whole "selected for cold drive" set for a chosen term.
 export async function POST(req: Request) {
   const owner = await getMyOwner();
   if (!owner) {

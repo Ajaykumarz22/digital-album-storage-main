@@ -18,7 +18,7 @@ import { ArchiveItemModel } from "@/models/ArchiveItem";
 import { FileModel } from "@/models/File";
 import type { Currency } from "@/lib/plans";
 
-// Pay for + start freezing everything tagged "selected for deep storage".
+// Pay for + start freezing everything tagged "selected for cold drive".
 export async function POST(req: Request) {
   const owner = await getMyOwner();
   if (!owner) {
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 
   if (selected.length === 0) {
     return NextResponse.json(
-      { error: "Nothing selected for Deep Storage." },
+      { error: "Nothing selected for Cold Drive." },
       { status: 400 }
     );
   }
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   if (sizeBytes < MIN_ARCHIVE_BYTES) {
     return NextResponse.json(
       {
-        error: `Deep Storage needs at least ${humanBytes(
+        error: `Cold Drive needs at least ${humanBytes(
           MIN_ARCHIVE_BYTES
         )} total. Selected: ${humanBytes(sizeBytes)} — select more before paying.`,
       },

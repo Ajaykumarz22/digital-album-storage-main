@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   if (sizeBytes < MIN_ARCHIVE_BYTES) {
     return NextResponse.json(
       {
-        error: `Deep Storage needs at least ${humanBytes(
+        error: `Cold Drive needs at least ${humanBytes(
           MIN_ARCHIVE_BYTES
         )} per archive. Your selection is ${humanBytes(sizeBytes)}.`,
       },

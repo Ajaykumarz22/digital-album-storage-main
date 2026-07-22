@@ -7,23 +7,18 @@ import { Studio } from "@/models/Studio";
 import { ArchiveModel } from "@/models/Archive";
 import { getMyCustomerAccounts } from "@/lib/customer";
 import { getCurrentRole } from "@/lib/roles";
-import { getMyAccount, getMyOwner, regularUsedBytes } from "@/lib/account";
+import { getMyAccount, getMyOwner } from "@/lib/account";
 import BuyRegularStorage from "./BuyRegularStorage";
 import { getCurrency } from "@/lib/geo";
 import ArchiveList, { type ArchiveRow } from "@/components/archives/ArchiveList";
 import PendingDeepStorage from "@/components/archives/PendingDeepStorage";
-import InfoHint from "@/components/InfoHint";
+import ColdPayButton from "@/components/archives/ColdPayButton";
 import { getSelectedDeepFiles, folderPathMap } from "@/lib/deepSelection";
 import { loadTier } from "@/lib/portalDrive";
 import FileManager from "@/components/files/FileManager";
 import FileBrowser from "@/components/files/FileBrowser";
-
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 MB";
-  const mb = bytes / (1024 * 1024);
-  if (mb < 1024) return `${mb.toFixed(1)} MB`;
-  return `${(mb / 1024).toFixed(2)} GB`;
-}
+import PortalTabs from "@/components/portal/PortalTabs";
+import Faq from "@/components/Faq";
 
 export default async function PortalPage() {
   const { userId } = await auth();
@@ -54,7 +49,7 @@ export default async function PortalPage() {
   const customerIds = accounts.map((a) => String(a._id));
   const temp = await loadTier(owner.accountId, "temporary");
   const regular = await loadTier(owner.accountId, "regular");
-  const regularUsed = await regularUsedBytes(owner.accountId);
+  const purchasedGb = Number((regularBytes / 1024 ** 3).toFixed(1));
   const archives = await loadMyArchives(owner.accountId);
   const studioNameByCustomer = new Map(
     accounts.map((a) => [
@@ -74,41 +69,41 @@ export default async function PortalPage() {
   );
   const canImport = regularBytes > 0;
 
-  return (
-    <div className="mx-auto max-w-5xl space-y-10 px-6 py-12">
-      <h1 className="text-2xl font-semibold">My Storage</h1>
+  // Totals for the Cold Drive "Pay & archive" button (title row).
+  const pendingCount =
+    pending.studioGroups.reduce((s, g) => s + g.fileCount, 0) +
+    pending.folderGroups.reduce((s, g) => s + g.fileCount, 0) +
+    pending.ownItems.length;
+  const pendingBytes =
+    pending.studioGroups.reduce((s, g) => s + g.sizeBytes, 0) +
+    pending.folderGroups.reduce((s, g) => s + g.sizeBytes, 0) +
+    pending.ownItems.reduce((s, i) => s + i.size, 0);
 
-      {/* Upload — free; lands in Temporary storage */}
-      <section className="rounded-lg border border-black/10 p-6 dark:border-white/10">
-        <h2 className="mb-1 text-sm font-semibold">Upload</h2>
-        <p className="mb-4 text-xs text-black/50 dark:text-white/50">
-          Uploads land in Temporary storage (free, auto-deletes after 15 days).
-          Move them to Regular or Deep storage to keep them.
-        </p>
-        <FileManager
-          currentFolderId={temp.currentFolderId}
-          endpoints={{
-            presign: "/api/portal/presign",
-            confirm: "/api/portal/confirm",
-            folders: "/api/portal/folders",
-          }}
-        />
-      </section>
+  const uploadTab = (
+    <div className="space-y-4">
+      {/* "My uploads" title with a right-aligned "Actions" dropdown */}
+      <FileManager
+        title="My uploads"
+        currentFolderId={temp.currentFolderId}
+        endpoints={{
+          presign: "/api/portal/presign",
+          confirm: "/api/portal/confirm",
+          folders: "/api/portal/folders",
+        }}
+        moveAllRegularEndpoint="/api/portal/regular/move-all"
+        moveAllDeepEndpoint="/api/portal/deep-cart/add-all"
+      />
 
       {/* Temporary Storage — your own uploads + studio deliveries */}
       <section>
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          Temporary Storage (auto delete after 15 days)
-          <InfoHint text="Free landing area. Every file here auto-deletes 15 days after it arrived — move it to Regular or Deep storage to keep it." />
-        </h2>
-
-        <div className="mt-4">
+        <div>
           <FileBrowser
             currentFolderId={null}
             base="/portal"
             folderHrefBase="/portal/folder"
             folderHrefSuffix="?tier=temporary"
             showExpiry
+            selectable={false}
             folders={temp.folderRows}
             files={temp.fileRows}
             moveTargets={temp.moveTargets}
@@ -122,41 +117,51 @@ export default async function PortalPage() {
               deepSelect: "/api/portal/deep-cart/add",
               deepUnselect: "/api/portal/deep-cart/remove",
               moveToRegular: "/api/portal/regular/move",
+              importShared: "/api/portal/import",
             }}
           />
         </div>
       </section>
+      <Faq />
+    </div>
+  );
 
-      {/* Deep Storage — long-term frozen archives */}
-      <section>
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          Deep Storage (cheapest, approx Rs 180/1TB/Month)
-          <InfoHint text="Long-term frozen archives. Browsing the contents is instant; retrieving the actual files takes up to 48 hours and is billed separately." />
-        </h2>
-        <div className="mt-4 space-y-4">
-          <PendingDeepStorage pending={pending} currency={currency} />
-          <ArchiveList
-            archives={archives}
-            browseBase="/portal/archive"
-            emptyHint="No archives yet. Select files in Regular storage and choose “Move to Deep Storage” to keep them long-term at the lowest cost."
-          />
+  const deepTab = (
+    <div className="mt-6 space-y-4">
+      {/* Title row: "Cold Drive" + right-aligned "Pay & archive" */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-lg font-semibold">Cold Drive</h1>
+        <ColdPayButton
+          totalCount={pendingCount}
+          totalBytes={pendingBytes}
+          currency={currency}
+        />
+      </div>
+      <PendingDeepStorage pending={pending} />
+      <ArchiveList
+        archives={archives}
+        browseBase="/portal/archive"
+        emptyHint="No archives yet. Select files in Hot drive and choose “Move to Cold Drive” to keep them long-term at the lowest cost."
+      />
+      <Faq />
+    </div>
+  );
+
+  const regularTab = (
+    <div className="mt-6">
+      {/* Title row: "Hot Drive · Own X GB" + right-aligned "Buy Hot drive" */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-lg font-semibold">Hot Drive</h1>
+          <span className="text-xs text-black/50 dark:text-white/50">
+            Own {purchasedGb} GB
+          </span>
         </div>
-      </section>
+        <BuyRegularStorage currency={currency} />
+      </div>
 
-      {/* Regular storage — paid, permanent */}
       <section>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            Regular Storage
-            <InfoHint text="Paid, permanent storage. You keep files here as long as you have enough purchased storage. Studios can't see these." />
-          </h2>
-          <BuyRegularStorage currency={currency} />
-        </div>
-        <p className="mt-1 text-sm text-black/60 dark:text-white/60">
-          {formatBytes(regularUsed)} used of {formatBytes(regularBytes)} purchased.
-        </p>
-
-        <div className="mt-4">
+        <div>
           <FileBrowser
             currentFolderId={null}
             base="/portal"
@@ -176,11 +181,18 @@ export default async function PortalPage() {
           />
         </div>
       </section>
+      <Faq />
+    </div>
+  );
+
+  return (
+    <div className="mx-auto max-w-5xl px-6 pb-12">
+      <PortalTabs upload={uploadTab} deep={deepTab} regular={regularTab} />
     </div>
   );
 }
 
-/* ---------------- Deep Storage (frozen archives) ---------------- */
+/* ---------------- Cold Drive (frozen archives) ---------------- */
 
 async function loadMyArchives(accountId: string): Promise<ArchiveRow[]> {
   await connectToDatabase();
@@ -320,7 +332,6 @@ type SharedRow = {
   name: string;
   fileCount: number;
   sizeBytes: number;
-  allSelected: boolean;
 };
 
 async function loadSharedRows(
@@ -348,6 +359,9 @@ async function loadSharedRows(
         customerId: { $in: ids },
         ownerType: "studio",
         status: "ready",
+        // Files tagged for Cold Drive are hidden here — they show in the
+        // Payment Pending list instead (same as the customer's own uploads).
+        deepStatus: "none",
         ...(takenIds.length ? { _id: { $nin: takenIds } } : {}),
       },
     },
@@ -356,28 +370,24 @@ async function loadSharedRows(
         _id: "$customerId",
         n: { $sum: 1 },
         bytes: { $sum: "$size" },
-        selectedN: {
-          $sum: { $cond: [{ $eq: ["$deepStatus", "selected"] }, 1, 0] },
-        },
       },
     },
   ]);
-  const statById = new Map<string, { n: number; bytes: number; selectedN: number }>(
+  const statById = new Map<string, { n: number; bytes: number }>(
     agg.map((c) => [
       String(c._id),
-      { n: c.n as number, bytes: c.bytes as number, selectedN: c.selectedN as number },
+      { n: c.n as number, bytes: c.bytes as number },
     ])
   );
 
   return accounts
     .map((a) => {
-      const stat = statById.get(a.id) ?? { n: 0, bytes: 0, selectedN: 0 };
+      const stat = statById.get(a.id) ?? { n: 0, bytes: 0 };
       return {
         id: a.id,
         name: studioNameById.get(a.studioId) || "Studio",
         fileCount: stat.n,
         sizeBytes: stat.bytes,
-        allSelected: stat.n > 0 && stat.selectedN === stat.n,
       };
     })
     .filter((r) => r.fileCount > 0);

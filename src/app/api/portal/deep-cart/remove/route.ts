@@ -5,7 +5,7 @@ import { getMyOwner } from "@/lib/account";
 import { getMyCustomerAccounts } from "@/lib/customer";
 import { FileModel } from "@/models/File";
 
-// Untag files (the × on a "Selected for deep storage" tag / Remove in the list).
+// Untag files (the × on a "Selected for cold drive" tag / Remove in the list).
 export async function POST(req: Request) {
   const owner = await getMyOwner();
   if (!owner) {

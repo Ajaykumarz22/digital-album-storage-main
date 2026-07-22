@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { formatBytes, formatDate } from "@/lib/format";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type MouseEvent } from "react";
 import DeepArchiveModal from "@/components/archives/DeepArchiveModal";
-import TempStorageMove from "@/components/archives/TempStorageMove";
 import { daysLeft } from "@/lib/lifecycle";
+import { FolderGlyph, FileGlyph, KebabButton } from "@/components/files/rowUi";
 
 // A studio delivery shown as a folder-style row inside Temporary Storage.
 type SharedRow = {
@@ -13,7 +14,6 @@ type SharedRow = {
   name: string;
   fileCount: number;
   sizeBytes: number;
-  allSelected: boolean;
 };
 type FolderRow = {
   id: string;
@@ -30,24 +30,6 @@ type FileRow = {
 };
 type MoveTarget = { id: string; path: string };
 
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-// Deterministic date format (UTC) to avoid server/client hydration mismatches.
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
-}
-
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 MB";
-  const mb = bytes / (1024 * 1024);
-  if (mb < 1024) return `${mb.toFixed(1)} MB`;
-  return `${(mb / 1024).toFixed(2)} GB`;
-}
-
 export default function FileBrowser({
   currentFolderId,
   base,
@@ -63,6 +45,7 @@ export default function FileBrowser({
   showExpiry = false,
   sharedRows = [],
   canImport = false,
+  selectable = true,
 }: {
   currentFolderId: string | null;
   base: string;
@@ -76,11 +59,13 @@ export default function FileBrowser({
     // Studio side: direct archive with a price/pay modal (both present).
     archiveQuote?: string;
     archiveCreate?: string;
-    // Customer side: tag selection for Deep Storage / untag it.
+    // Customer side: tag selection for Cold Drive / untag it.
     deepSelect?: string;
     deepUnselect?: string;
-    // Temporary tier: move selection into paid Regular storage.
+    // Temporary tier: move selection into paid Hot drive.
     moveToRegular?: string;
+    // Studio-shared deliveries: copy the whole delivery into Hot drive.
+    importShared?: string;
   };
   baseBody?: Record<string, unknown>;
   currency?: "USD" | "INR";
@@ -95,8 +80,11 @@ export default function FileBrowser({
   showExpiry?: boolean;
   // Studio deliveries to list as folder-style rows (Temporary tier only).
   sharedRows?: SharedRow[];
-  // Whether the user can copy shared files to Regular storage (has quota).
+  // Whether the user can copy shared files to Hot drive (has quota).
   canImport?: boolean;
+  // Multi-select checkboxes + bulk toolbar. Off for My Uploads (uses the
+  // top "Actions" dropdown + per-row ⋮ menu instead).
+  selectable?: boolean;
 }) {
   const router = useRouter();
   const [selFiles, setSelFiles] = useState<Set<string>>(new Set());
@@ -108,7 +96,7 @@ export default function FileBrowser({
       ? `${folderHrefBase}/${id}${folderHrefSuffix}`
       : `${base}?${folderParam}=${id}`;
 
-  // "Move to Deep Storage" modal state (studio side = direct archive).
+  // "Move to Cold Drive" modal state (studio side = direct archive).
   const canArchive = Boolean(endpoints.archiveQuote && endpoints.archiveCreate);
   // Customer side: move selection into the Payment Pending list.
   const canDeepSelect = Boolean(endpoints.deepSelect);
@@ -129,13 +117,13 @@ export default function FileBrowser({
       body: JSON.stringify(bodyFor(ov)),
     });
     setBusy(false);
-    setMoveMenu(null);
+    setRowMenu(null);
     if (res.ok) {
       if (!ov) clearSelection();
       router.refresh();
     } else {
       const j = await res.json().catch(() => ({}));
-      alert(j.error || "Could not move to Regular storage.");
+      alert(j.error || "Could not move to Hot drive.");
     }
   }
 
@@ -147,42 +135,92 @@ export default function FileBrowser({
       body: JSON.stringify(bodyFor(ov)),
     });
     setBusy(false);
-    setMoveMenu(null);
+    setRowMenu(null);
     if (res.ok) {
       if (!ov) clearSelection();
       alert(
-        "Tagged for Deep Storage. They stay here, marked “Selected for deep storage”, and appear in your Payment Pending list — pay there to freeze them."
+        "Tagged for Cold Drive. They stay here, marked “Selected for cold drive”, and appear in your Payment Pending list — pay there to freeze them."
       );
       router.refresh();
     } else {
       const j = await res.json().catch(() => ({}));
-      alert(j.error || "Could not move to Deep Storage.");
+      alert(j.error || "Could not move to Cold Drive.");
     }
   }
   const [archiveOpen, setArchiveOpen] = useState(false);
-  // One "Move" popup shared by file + folder rows (fixed-positioned so it
-  // escapes the table's overflow clipping).
-  const [moveMenu, setMoveMenu] = useState<{
+  // One per-row actions menu (⋮), fixed-positioned so it escapes the table's
+  // overflow clipping. Holds everything the menu needs to act on that row.
+  type RowMenu = {
     id: string;
-    kind: "file" | "folder";
-  } | null>(null);
-  const [movePos, setMovePos] = useState<{ top: number; right: number } | null>(
+    kind: "file" | "folder" | "shared";
+    name: string;
+    viewHref: string;
+  };
+  const [rowMenu, setRowMenu] = useState<RowMenu | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(
     null
   );
-  function openMoveMenu(
-    id: string,
-    kind: "file" | "folder",
-    e: MouseEvent<HTMLButtonElement>
-  ) {
-    if (moveMenu?.id === id) {
-      setMoveMenu(null);
+  function openRowMenu(row: RowMenu, e: MouseEvent<HTMLButtonElement>) {
+    if (rowMenu?.id === row.id) {
+      setRowMenu(null);
       return;
     }
     const r = e.currentTarget.getBoundingClientRect();
-    setMovePos({ top: r.bottom + 4, right: window.innerWidth - r.right });
-    setMoveMenu({ id, kind });
+    setMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    setRowMenu(row);
   }
-  const canFileMove = canMoveRegular || canDeepSelect;
+
+  // ----- Studio-shared delivery actions (act on the WHOLE delivery) -----
+  const canImportShared = Boolean(endpoints.importShared);
+  async function sharedMoveToRegular(studioSpace: string, studioName: string) {
+    if (!canImport) {
+      alert("Choose a storage plan first to move files to Hot drive.");
+      return;
+    }
+    const name = window.prompt("Folder name in Hot drive", studioName);
+    if (!name || !name.trim()) return;
+    setBusy(true);
+    const res = await fetch(endpoints.importShared as string, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ studioSpace, name: name.trim() }),
+    });
+    setBusy(false);
+    setRowMenu(null);
+    if (res.ok) {
+      const j = await res.json().catch(() => ({}));
+      alert(`Moved ${j.copied ?? ""} file(s) to Hot drive.`);
+      router.refresh();
+    } else {
+      const j = await res.json().catch(() => ({}));
+      alert(j.error || "Could not move.");
+    }
+  }
+  async function sharedMoveToDeep(studioSpace: string, studioName: string) {
+    if (
+      !window.confirm(
+        `Move all of ${studioName}'s files to Cold Drive? They'll wait in your Payment Pending list.`
+      )
+    )
+      return;
+    setBusy(true);
+    const res = await fetch(endpoints.deepSelect as string, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ studioSpace }),
+    });
+    setBusy(false);
+    setRowMenu(null);
+    if (res.ok) {
+      alert(
+        "All files tagged “Selected for cold drive” — pay in your Payment Pending list to freeze them."
+      );
+      router.refresh();
+    } else {
+      const j = await res.json().catch(() => ({}));
+      alert(j.error || "Could not move.");
+    }
+  }
 
   const total = folders.length + files.length;
   const selectedCount = selFiles.size + selFolders.size;
@@ -377,7 +415,7 @@ export default function FileBrowser({
   return (
     <div>
       {/* Selection toolbar */}
-      {selectedCount > 0 && (
+      {selectable && selectedCount > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-black/10 bg-black/[0.02] px-4 py-3 text-sm dark:border-white/10 dark:bg-white/[0.03]">
           <span className="font-medium">{selectedCount} selected</span>
 
@@ -421,7 +459,7 @@ export default function FileBrowser({
               disabled={busy}
               className="rounded-md border border-blue-500/40 px-3 py-1.5 font-medium text-blue-600 hover:bg-blue-500/10 disabled:opacity-50"
             >
-              Move to Deep Storage
+              Move to Cold Drive
             </button>
           )}
 
@@ -432,7 +470,7 @@ export default function FileBrowser({
               disabled={busy}
               className="rounded-md border border-black/15 px-3 py-1.5 font-medium hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:hover:bg-white/10"
             >
-              Move to Regular storage
+              Move to Hot drive
             </button>
           )}
 
@@ -443,7 +481,7 @@ export default function FileBrowser({
               disabled={busy}
               className="rounded-md border border-blue-500/40 px-3 py-1.5 font-medium text-blue-600 hover:bg-blue-500/10 disabled:opacity-50"
             >
-              Move to Deep Storage
+              Move to Cold Drive
             </button>
           )}
 
@@ -467,156 +505,138 @@ export default function FileBrowser({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-black/10 dark:border-white/10">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-black/10 text-black/50 dark:border-white/10 dark:text-white/50">
-            <tr>
-              <th className="w-10 px-4 py-3">
+      <div className="overflow-hidden rounded-lg border border-black/10 dark:border-white/10">
+        {/* Select-all header */}
+        <div className="flex items-center gap-3 border-b border-black/10 px-3 py-2 text-xs text-black/50 dark:border-white/10 dark:text-white/50">
+          {selectable && (
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleAll}
+              aria-label="Select all"
+              className="h-4 w-4 shrink-0"
+            />
+          )}
+          <span>
+            {total} item{total === 1 ? "" : "s"}
+            {sharedRows.length > 0 && ` · ${sharedRows.length} shared`}
+          </span>
+        </div>
+
+        {/* Studio deliveries */}
+        {sharedRows.map((sr) => (
+          <div
+            key={`shared-${sr.id}`}
+            className="flex items-center gap-3 border-b border-black/5 px-3 py-2.5 last:border-0 hover:bg-black/[0.02] dark:border-white/5 dark:hover:bg-white/[0.03]"
+          >
+            {selectable && <span className="w-4 shrink-0" />}
+            <FolderGlyph />
+            <div className="min-w-0 flex-1">
+              <Link
+                href={`/portal/shared/${sr.id}`}
+                className="block truncate text-sm font-medium hover:underline"
+              >
+                {sr.name}
+              </Link>
+              <div className="mt-0.5 truncate text-xs text-black/50 dark:text-white/50">
+                {formatBytes(sr.sizeBytes)} · shared · {sr.fileCount} file
+                {sr.fileCount === 1 ? "" : "s"}
+                {showExpiry && " · varies"}
+              </div>
+            </div>
+            <KebabButton
+              label={`Actions for ${sr.name}`}
+              disabled={busy}
+              onClick={(e) =>
+                openRowMenu(
+                  {
+                    id: sr.id,
+                    kind: "shared",
+                    name: sr.name,
+                    viewHref: `/portal/shared/${sr.id}`,
+                  },
+                  e
+                )
+              }
+            />
+          </div>
+        ))}
+
+        {/* Folders */}
+        {folders.map((fld) => (
+          <div
+            key={fld.id}
+            className="flex items-center gap-3 border-b border-black/5 px-3 py-2.5 last:border-0 hover:bg-black/[0.02] dark:border-white/5 dark:hover:bg-white/[0.03]"
+          >
+            {selectable && (
+              <input
+                type="checkbox"
+                checked={selFolders.has(fld.id)}
+                onChange={() => toggleFolder(fld.id)}
+                aria-label={`Select folder ${fld.name}`}
+                className="h-4 w-4 shrink-0"
+              />
+            )}
+            <FolderGlyph />
+            <div className="min-w-0 flex-1">
+              <Link
+                href={folderLink(fld.id)}
+                className="block truncate text-sm font-medium hover:underline"
+              >
+                {fld.name}
+              </Link>
+              <div className="mt-0.5 truncate text-xs text-black/50 dark:text-white/50">
+                {fld.sizeBytes ? formatBytes(fld.sizeBytes) : "—"} ·{" "}
+                {formatDate(fld.createdAt)}
+              </div>
+            </div>
+            <KebabButton
+              label={`Actions for ${fld.name}`}
+              disabled={busy}
+              onClick={(e) =>
+                openRowMenu(
+                  {
+                    id: fld.id,
+                    kind: "folder",
+                    name: fld.name,
+                    viewHref: folderLink(fld.id),
+                  },
+                  e
+                )
+              }
+            />
+          </div>
+        ))}
+
+        {/* Files */}
+        {files.map((f) => {
+          const d = showExpiry ? daysLeft(f.createdAt) : null;
+          return (
+            <div
+              key={f.id}
+              className="flex items-center gap-3 border-b border-black/5 px-3 py-2.5 last:border-0 hover:bg-black/[0.02] dark:border-white/5 dark:hover:bg-white/[0.03]"
+            >
+              {selectable && (
                 <input
                   type="checkbox"
-                  checked={allSelected}
-                  onChange={toggleAll}
-                  aria-label="Select all"
+                  checked={selFiles.has(f.id)}
+                  onChange={() => toggleFile(f.id)}
+                  aria-label={`Select file ${f.filename}`}
+                  className="h-4 w-4 shrink-0"
                 />
-              </th>
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Size</th>
-              <th className="px-4 py-3 font-medium">Date</th>
-              {showExpiry && <th className="px-4 py-3 font-medium">Expires</th>}
-              <th className="px-4 py-3 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Studio deliveries as folder-style rows (Temporary tier) */}
-            {sharedRows.map((sr) => (
-              <tr
-                key={`shared-${sr.id}`}
-                className="border-b border-black/5 last:border-0 hover:bg-black/[0.02] dark:border-white/5 dark:hover:bg-white/[0.03]"
-              >
-                <td className="px-4 py-3"></td>
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/portal/shared/${sr.id}`}
-                    className="font-medium hover:underline"
-                  >
-                    📁 {sr.name}
-                  </Link>
-                  <span className="ml-2 text-xs text-black/40 dark:text-white/40">
-                    shared · {sr.fileCount} file(s)
-                  </span>
-                  {sr.allSelected && (
-                    <span className="ml-2 inline-flex items-center rounded-full border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600">
-                      Selected for deep storage
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3">{formatBytes(sr.sizeBytes)}</td>
-                <td className="px-4 py-3 text-black/40 dark:text-white/40">—</td>
-                {showExpiry && (
-                  <td className="px-4 py-3 text-black/40 dark:text-white/40">
-                    varies
-                  </td>
-                )}
-                <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-4">
-                    <Link
-                      href={`/portal/shared/${sr.id}`}
-                      className="font-medium text-blue-600 hover:underline"
-                    >
-                      View
-                    </Link>
-                    <TempStorageMove
-                      studioSpace={sr.id}
-                      studioName={sr.name}
-                      canImport={canImport}
-                    />
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {folders.map((fld) => (
-              <tr
-                key={fld.id}
-                className="border-b border-black/5 last:border-0 hover:bg-black/[0.02] dark:border-white/5 dark:hover:bg-white/[0.03]"
-              >
-                <td className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={selFolders.has(fld.id)}
-                    onChange={() => toggleFolder(fld.id)}
-                    aria-label={`Select folder ${fld.name}`}
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  <Link
-                    href={folderLink(fld.id)}
-                    className="font-medium hover:underline"
-                  >
-                    📁 {fld.name}
-                  </Link>
-                </td>
-                <td className="px-4 py-3">
-                  {fld.sizeBytes ? formatBytes(fld.sizeBytes) : "—"}
-                </td>
-                <td className="px-4 py-3 text-black/60 dark:text-white/60">
-                  {formatDate(fld.createdAt)}
-                </td>
-                {showExpiry && (
-                  <td className="px-4 py-3 text-black/40 dark:text-white/40">—</td>
-                )}
-                <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-4">
-                    <Link
-                      href={folderLink(fld.id)}
-                      className="font-medium text-blue-600 hover:underline"
-                    >
-                      View
-                    </Link>
-                    {canFileMove && (
-                      <button
-                        type="button"
-                        onClick={(e) => openMoveMenu(fld.id, "folder", e)}
-                        disabled={busy}
-                        className="font-medium text-blue-600 hover:underline disabled:opacity-50"
-                      >
-                        Move
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => deleteOneFolder(fld.id, fld.name)}
-                      disabled={busy}
-                      className="text-red-600 hover:underline disabled:opacity-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {files.map((f) => (
-              <tr
-                key={f.id}
-                className="border-b border-black/5 last:border-0 hover:bg-black/[0.02] dark:border-white/5 dark:hover:bg-white/[0.03]"
-              >
-                <td className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={selFiles.has(f.id)}
-                    onChange={() => toggleFile(f.id)}
-                    aria-label={`Select file ${f.filename}`}
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  {f.filename}
+              )}
+              <FileGlyph />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-sm">{f.filename}</span>
                   {f.deepTag === "selected" && (
-                    <span className="ml-2 inline-flex items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600">
-                      Selected for deep storage
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600">
+                      Selected for cold drive
                       <button
                         type="button"
                         onClick={() => unselectDeep(f.id)}
                         disabled={busy}
-                        aria-label="Remove from Deep Storage selection"
+                        aria-label="Remove from Cold Drive selection"
                         className="font-semibold hover:opacity-70 disabled:opacity-50"
                       >
                         ×
@@ -624,107 +644,151 @@ export default function FileBrowser({
                     </span>
                   )}
                   {f.deepTag === "moved" && (
-                    <span className="ml-2 inline-flex items-center rounded-full border border-black/15 px-2 py-0.5 text-xs text-black/50 dark:border-white/20 dark:text-white/50">
-                      Moved to deep
+                    <span className="shrink-0 rounded-full border border-black/15 px-2 py-0.5 text-xs text-black/50 dark:border-white/20 dark:text-white/50">
+                      Moved to cold
                     </span>
                   )}
-                </td>
-                <td className="px-4 py-3">{formatBytes(f.size)}</td>
-                <td className="px-4 py-3 text-black/60 dark:text-white/60">
-                  {formatDate(f.createdAt)}
-                </td>
-                {showExpiry &&
-                  (() => {
-                    const d = daysLeft(f.createdAt);
-                    return (
-                      <td
-                        className={`px-4 py-3 ${
-                          d <= 3 ? "text-red-600" : "text-black/60 dark:text-white/60"
-                        }`}
-                      >
+                </div>
+                <div className="mt-0.5 truncate text-xs text-black/50 dark:text-white/50">
+                  {formatBytes(f.size)}
+                  {d !== null ? (
+                    <>
+                      {" · "}
+                      <span className={d <= 3 ? "text-red-600" : ""}>
                         {d === 0 ? "Today" : `${d} day${d === 1 ? "" : "s"} left`}
-                      </td>
-                    );
-                  })()}
-                <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-4">
-                    <a
-                      href={`/api/files/${f.id}/download`}
-                      className="font-medium text-blue-600 hover:underline"
-                    >
-                      View
-                    </a>
-                    {canFileMove && (
-                      <button
-                        type="button"
-                        onClick={(e) => openMoveMenu(f.id, "file", e)}
-                        disabled={busy}
-                        className="font-medium text-blue-600 hover:underline disabled:opacity-50"
-                      >
-                        Move
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => deleteOneFile(f.id, f.filename)}
-                      disabled={busy}
-                      className="text-red-600 hover:underline disabled:opacity-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      </span>
+                    </>
+                  ) : (
+                    ` · ${formatDate(f.createdAt)}`
+                  )}
+                </div>
+              </div>
+              <KebabButton
+                label={`Actions for ${f.filename}`}
+                disabled={busy}
+                onClick={(e) =>
+                  openRowMenu(
+                    {
+                      id: f.id,
+                      kind: "file",
+                      name: f.filename,
+                      viewHref: `/api/files/${f.id}/download`,
+                    },
+                    e
+                  )
+                }
+              />
+            </div>
+          );
+        })}
       </div>
 
-      {/* Shared Move popup for a single file/folder row */}
-      {moveMenu && movePos && (
+      {/* Per-row actions menu (⋮): View / Move / Delete */}
+      {rowMenu && menuPos && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setMoveMenu(null)} />
+          <div className="fixed inset-0 z-40" onClick={() => setRowMenu(null)} />
           <div
-            style={{ position: "fixed", top: movePos.top, right: movePos.right }}
-            className="z-50 w-56 rounded-md border border-black/10 bg-background p-1 text-left shadow-lg dark:border-white/15"
+            style={{ position: "fixed", top: menuPos.top, right: menuPos.right }}
+            className="z-50 w-52 rounded-md border border-black/10 bg-background p-1 text-left shadow-lg dark:border-white/15"
           >
-            {canMoveRegular && (
-              <button
-                type="button"
-                onClick={() =>
-                  moveToRegular(
-                    moveMenu.kind === "file"
-                      ? { fileIds: [moveMenu.id] }
-                      : { folderIds: [moveMenu.id] }
-                  )
-                }
-                disabled={busy}
-                className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+            {rowMenu.kind === "file" ? (
+              <a
+                href={rowMenu.viewHref}
+                onClick={() => setRowMenu(null)}
+                className="block rounded px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
               >
-                Move to Regular storage
-              </button>
+                View
+              </a>
+            ) : (
+              <Link
+                href={rowMenu.viewHref}
+                onClick={() => setRowMenu(null)}
+                className="block rounded px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+              >
+                View
+              </Link>
             )}
-            {canDeepSelect && (
-              <button
-                type="button"
-                onClick={() =>
-                  moveToDeep(
-                    moveMenu.kind === "file"
-                      ? { fileIds: [moveMenu.id] }
-                      : { folderIds: [moveMenu.id] }
-                  )
-                }
-                disabled={busy}
-                className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
-              >
-                Move to Deep Storage
-              </button>
+
+            {rowMenu.kind === "shared" ? (
+              <>
+                {canImportShared && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      sharedMoveToRegular(rowMenu.id, rowMenu.name)
+                    }
+                    disabled={busy}
+                    className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+                  >
+                    Move to Hot drive
+                  </button>
+                )}
+                {canDeepSelect && (
+                  <button
+                    type="button"
+                    onClick={() => sharedMoveToDeep(rowMenu.id, rowMenu.name)}
+                    disabled={busy}
+                    className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+                  >
+                    Move to Cold Drive
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                {canMoveRegular && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      moveToRegular(
+                        rowMenu.kind === "file"
+                          ? { fileIds: [rowMenu.id] }
+                          : { folderIds: [rowMenu.id] }
+                      )
+                    }
+                    disabled={busy}
+                    className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+                  >
+                    Move to Hot drive
+                  </button>
+                )}
+                {canDeepSelect && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      moveToDeep(
+                        rowMenu.kind === "file"
+                          ? { fileIds: [rowMenu.id] }
+                          : { folderIds: [rowMenu.id] }
+                      )
+                    }
+                    disabled={busy}
+                    className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+                  >
+                    Move to Cold Drive
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const { id, kind, name } = rowMenu;
+                    setRowMenu(null);
+                    if (kind === "file") deleteOneFile(id, name);
+                    else deleteOneFolder(id, name);
+                  }}
+                  disabled={busy}
+                  className="block w-full rounded px-3 py-2 text-left text-sm text-red-600 hover:bg-red-500/10 disabled:opacity-50"
+                >
+                  Delete
+                </button>
+              </>
             )}
           </div>
         </>
       )}
 
-      {/* Move to Deep Storage — shared modal (studio direct archive) */}
+      {/* Move to Cold Drive — shared modal (studio direct archive) */}
       {archiveOpen && canArchive && (
         <DeepArchiveModal
           quoteUrl={endpoints.archiveQuote as string}

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 const MIN_GB = 50;
 
-// "Buy Regular storage" button + modal. User enters GB (min 50), gets a price
+// "Buy Hot drive" button + modal. User enters GB (min 50), gets a price
 // (shown monthly, billed yearly), and pays (mock). Tops up their quota.
 export default function BuyRegularStorage({
   currency,
@@ -58,7 +58,7 @@ export default function BuyRegularStorage({
     setBusy(false);
     if (res.ok) {
       setOpen(false);
-      alert(`Added ${gb} GB of Regular storage (mock payment).`);
+      alert(`Added ${gb} GB of Hot drive (mock payment).`);
       router.refresh();
     } else {
       const j = await res.json().catch(() => ({}));
@@ -77,13 +77,13 @@ export default function BuyRegularStorage({
         }}
         className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
       >
-        Buy Regular storage
+        Buy Hot drive
       </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-xl border border-black/10 bg-background p-6 shadow-xl dark:border-white/15">
-            <h3 className="text-lg font-semibold">Buy Regular storage</h3>
+            <h3 className="text-lg font-semibold">Buy Hot drive</h3>
             <p className="mt-1 text-sm text-black/60 dark:text-white/60">
               Billed yearly. Minimum {MIN_GB} GB — enter any amount from there.
               Adds to your existing quota.

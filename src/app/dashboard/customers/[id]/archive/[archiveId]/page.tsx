@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatBytes, formatDate } from "@/lib/format";
 import mongoose from "mongoose";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
@@ -12,22 +13,6 @@ import RestoreControls from "@/components/archives/RestoreControls";
 import { ArchiveModel } from "@/models/Archive";
 import { ArchiveItemModel } from "@/models/ArchiveItem";
 
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 MB";
-  const mb = bytes / (1024 * 1024);
-  if (mb < 1024) return `${mb.toFixed(1)} MB`;
-  return `${(mb / 1024).toFixed(2)} GB`;
-}
-
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-function formatDate(d: unknown): string {
-  if (!d) return "—";
-  const x = new Date(d as string);
-  return `${MONTHS[x.getUTCMonth()]} ${x.getUTCDate()}, ${x.getUTCFullYear()}`;
-}
 function money(usd: number, inr: number, currency: "USD" | "INR"): string {
   return currency === "INR"
     ? `₹${inr.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`

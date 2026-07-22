@@ -29,6 +29,13 @@ export async function loadTier(
   const currentFolderId = resolved.ok ? resolved.folderId : null;
   const folderValid = resolved.ok;
 
+  // Temporary (My Uploads) hides anything tagged for Cold Drive — those files
+  // live in the Payment Pending list now. Other tiers still show them (badged).
+  const fileVisibility =
+    tier === "temporary"
+      ? { deepStatus: "none" as const }
+      : { deepStatus: { $ne: "archiving" as const } };
+
   const [folders, files, breadcrumb, allFolders] = await Promise.all([
     Folder.find({ ...scope, parentId: currentFolderId }).sort({ name: 1 }).lean(),
     FileModel.find({
@@ -36,7 +43,7 @@ export async function loadTier(
       folderId: currentFolderId,
       status: "ready",
       tier,
-      deepStatus: { $ne: "archiving" },
+      ...fileVisibility,
     })
       .sort({ createdAt: -1 })
       .lean(),
@@ -44,8 +51,13 @@ export async function loadTier(
     loadAllFolders(scope),
   ]);
 
-  // Per-folder total size (this tier), including nested descendant folders.
-  const sizeAgg = await FileModel.aggregate([
+  // Per-folder stats (this tier), including nested descendant folders:
+  //   bytes/visible = files still shown here; total = all live files (any tag).
+  const visibleCond =
+    tier === "temporary"
+      ? { $eq: ["$deepStatus", "none"] }
+      : { $ne: ["$deepStatus", "archiving"] };
+  const statAgg = await FileModel.aggregate([
     {
       $match: {
         ownerType: "customer",
@@ -55,29 +67,51 @@ export async function loadTier(
         deepStatus: { $ne: "archiving" },
       },
     },
-    { $group: { _id: "$folderId", bytes: { $sum: "$size" } } },
+    {
+      $group: {
+        _id: "$folderId",
+        bytes: { $sum: { $cond: [visibleCond, "$size", 0] } },
+        visible: { $sum: { $cond: [visibleCond, 1, 0] } },
+        total: { $sum: 1 },
+      },
+    },
   ]);
-  const bytesByFolder = new Map<string, number>(
-    sizeAgg.map((s) => [String(s._id), s.bytes as number])
+  const statByFolder = new Map<
+    string,
+    { bytes: number; visible: number; total: number }
+  >(
+    statAgg.map((s) => [
+      String(s._id),
+      { bytes: s.bytes as number, visible: s.visible as number, total: s.total as number },
+    ])
   );
-  const folderSize = (id: string) => {
-    let total = 0;
+  const rollup = (id: string, key: "bytes" | "visible" | "total") => {
+    let sum = 0;
     for (const fid of collectFolderAndDescendants(allFolders, [id]))
-      total += bytesByFolder.get(fid) ?? 0;
-    return total;
+      sum += statByFolder.get(fid)?.[key] ?? 0;
+    return sum;
   };
+
+  let folderRows = folders.map((f) => ({
+    id: String(f._id),
+    name: f.name,
+    createdAt: iso(f.createdAt),
+    sizeBytes: rollup(String(f._id), "bytes"),
+  }));
+  // Hide folders whose files are all in Cold Drive's Payment Pending list
+  // (nothing visible remains) — but keep genuinely empty folders.
+  if (tier === "temporary") {
+    folderRows = folderRows.filter(
+      (f) => !(rollup(f.id, "total") > 0 && rollup(f.id, "visible") === 0)
+    );
+  }
 
   return {
     currentFolderId,
     folderValid,
     breadcrumb,
     moveTargets: buildFolderPaths(allFolders),
-    folderRows: folders.map((f) => ({
-      id: String(f._id),
-      name: f.name,
-      createdAt: iso(f.createdAt),
-      sizeBytes: folderSize(String(f._id)),
-    })),
+    folderRows,
     fileRows: files.map((f) => ({
       id: String(f._id),
       filename: f.filename,

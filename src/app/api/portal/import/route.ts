@@ -119,7 +119,7 @@ export async function POST(req: Request) {
   if (used + incoming > (account.regularBytes ?? 0)) {
     return NextResponse.json(
       {
-        error: `Not enough Regular storage — need ${humanBytes(
+        error: `Not enough Hot drive — need ${humanBytes(
           used + incoming - (account.regularBytes ?? 0)
         )} more. Buy more storage first.`,
         needMore: true,

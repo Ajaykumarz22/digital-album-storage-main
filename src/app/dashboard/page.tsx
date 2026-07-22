@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatBytes } from "@/lib/format";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { connectToDatabase } from "@/lib/mongodb";
@@ -7,12 +8,6 @@ import { getOrCreateCurrentStudio } from "@/lib/studio";
 import { getCurrentRole } from "@/lib/roles";
 import CreateCustomerForm from "./CreateCustomerForm";
 
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 MB";
-  const mb = bytes / (1024 * 1024);
-  if (mb < 1024) return `${mb.toFixed(1)} MB`;
-  return `${(mb / 1024).toFixed(2)} GB`;
-}
 
 function statusLabel(status: string, trialEndsAt: Date): string {
   if (status === "subscribed") return "Subscribed";

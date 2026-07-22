@@ -1,16 +1,9 @@
 import Link from "next/link";
+import { formatBytes } from "@/lib/format";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { getMyAccount, getMyUsedBytes } from "@/lib/account";
 
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 MB";
-  const mb = bytes / (1024 * 1024);
-  if (mb < 1024) return `${mb.toFixed(1)} MB`;
-  const gb = mb / 1024;
-  if (gb < 1024) return `${gb.toFixed(1)} GB`;
-  return `${(gb / 1024).toFixed(2)} TB`;
-}
 
 export default async function AccountPage() {
   const { userId } = await auth();
@@ -61,7 +54,7 @@ async function PersonalDetails({ regularBytes }: { regularBytes: number }) {
         </div>
         <div className="mt-3 flex items-center justify-between">
           <span className="text-sm text-black/50 dark:text-white/50">
-            Regular storage
+            Hot drive
           </span>
           <span className="font-medium">
             {formatBytes(used)} used of {formatBytes(regularBytes)} purchased
@@ -78,7 +71,7 @@ async function PersonalDetails({ regularBytes }: { regularBytes: number }) {
 
       <p className="text-sm text-black/50 dark:text-white/50">
         Uploading is free — files land in Temporary storage (auto-delete after
-        15 days). Buy Regular storage from your storage page to keep files
+        15 days). Buy Hot drive from your storage page to keep files
         permanently.
       </p>
     </div>

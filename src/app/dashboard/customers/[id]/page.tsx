@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatBytes } from "@/lib/format";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
@@ -10,7 +11,6 @@ import { getOwnedCustomer } from "@/lib/studio";
 import { getCurrentRole } from "@/lib/roles";
 import { getCurrency } from "@/lib/geo";
 import ArchiveList, { type ArchiveRow } from "@/components/archives/ArchiveList";
-import InfoHint from "@/components/InfoHint";
 import {
   resolveFolder,
   getBreadcrumb,
@@ -20,13 +20,9 @@ import {
 import FileManager from "@/components/files/FileManager";
 import FileBrowser from "@/components/files/FileBrowser";
 import CopyButton from "@/components/CopyButton";
+import Tabs from "@/components/Tabs";
+import Faq from "@/components/Faq";
 
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 MB";
-  const mb = bytes / (1024 * 1024);
-  if (mb < 1024) return `${mb.toFixed(1)} MB`;
-  return `${(mb / 1024).toFixed(2)} GB`;
-}
 
 function iso(d: unknown): string {
   return d instanceof Date ? d.toISOString() : new Date(String(d)).toISOString();
@@ -118,92 +114,101 @@ export default async function CustomerPage({
   const portalUrl = `${proto}://${host}/portal`;
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-12">
-      <Link
-        href="/dashboard"
-        className="text-sm text-black/50 hover:underline dark:text-white/50"
-      >
-        ← Back to dashboard
-      </Link>
+    <div className="mx-auto max-w-5xl px-6 pb-12">
+      <Tabs
+        tabs={[
+          {
+            key: "uploads",
+            label: "My Uploads",
+            content: (
+              <div className="space-y-4">
+                <div>
+                  <Link
+                    href="/dashboard"
+                    className="mt-4 inline-block text-sm text-black/50 hover:underline dark:text-white/50"
+                  >
+                    ← Back to dashboard
+                  </Link>
+                  {/* Customer name (title) + email (subtitle) with the Upload
+                      button aligned right */}
+                  <FileManager
+                    title={customer.name || customer.email}
+                    subtitle={`${customer.email} · ${formatBytes(
+                      customer.storageBytes
+                    )} used`}
+                    currentFolderId={currentFolderId}
+                    endpoints={{
+                      presign: "/api/uploads/presign",
+                      confirm: "/api/uploads/confirm",
+                      folders: "/api/folders",
+                    }}
+                    baseBody={{ customerId: String(customer._id) }}
+                  />
+                </div>
 
-      <h1 className="mt-3 text-2xl font-semibold">
-        {customer.name || customer.email}
-      </h1>
-      <p className="mt-1 text-black/60 dark:text-white/60">
-        {customer.email} · {formatBytes(customer.storageBytes)} used
-      </p>
+                <section>
+                  {/* Breadcrumb — only when inside a folder */}
+                  {breadcrumb.length > 0 && (
+                    <nav className="mb-3 mt-3 flex flex-wrap items-center gap-1 text-sm">
+                      <Link href={base} className="hover:underline">
+                        Hot drive
+                      </Link>
+                      {breadcrumb.map((b) => (
+                        <span key={b.id} className="flex items-center gap-1">
+                          <span className="text-black/30 dark:text-white/30">/</span>
+                          <Link
+                            href={`${base}?folder=${b.id}`}
+                            className="hover:underline"
+                          >
+                            {b.name}
+                          </Link>
+                        </span>
+                      ))}
+                    </nav>
+                  )}
 
-      <section className="mt-8 rounded-lg border border-black/10 p-6 dark:border-white/10">
-        <h2 className="mb-4 text-sm font-semibold">Upload</h2>
-        <FileManager
-          currentFolderId={currentFolderId}
-          endpoints={{
-            presign: "/api/uploads/presign",
-            confirm: "/api/uploads/confirm",
-            folders: "/api/folders",
-          }}
-          baseBody={{ customerId: String(customer._id) }}
-        />
-      </section>
+                  <div>
+                    <FileBrowser
+                      currentFolderId={currentFolderId}
+                      base={base}
+                      folders={folderRows}
+                      files={fileRows}
+                      moveTargets={moveTargets}
+                      currency={currency}
+                      endpoints={{
+                        move: "/api/items/move",
+                        folders: "/api/folders",
+                        delete: "/api/items/delete",
+                        archiveQuote: "/api/studio/archive/quote",
+                        archiveCreate: "/api/studio/archive/create",
+                      }}
+                      baseBody={{ customerId: String(customer._id) }}
+                    />
+                  </div>
+                </section>
+                <Faq />
+              </div>
+            ),
+          },
+          {
+            key: "cold",
+            label: "Cold Drive",
+            content: (
+              <div className="mt-6 space-y-4">
+                <h1 className="text-lg font-semibold">Cold Drive</h1>
+                <ArchiveList
+                  archives={archives}
+                  browseBase={`${base}/archive`}
+                  emptyHint="No archives yet. Select delivered files in My Uploads and choose “Move to Cold Drive”."
+                />
+                <Faq />
+              </div>
+            ),
+          },
+        ]}
+      />
 
-      <section className="mt-8">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          Temporary storage (auto deletes after 15 days)
-          <InfoHint text="Files you've delivered to this customer — kept live for instant viewing and download. Move them to Deep Storage to keep them long-term at a much lower cost." />
-        </h2>
-
-        {/* Breadcrumb — only when inside a folder */}
-        {breadcrumb.length > 0 && (
-          <nav className="mb-3 mt-3 flex flex-wrap items-center gap-1 text-sm">
-            <Link href={base} className="hover:underline">
-              Regular storage
-            </Link>
-            {breadcrumb.map((b) => (
-              <span key={b.id} className="flex items-center gap-1">
-                <span className="text-black/30 dark:text-white/30">/</span>
-                <Link href={`${base}?folder=${b.id}`} className="hover:underline">
-                  {b.name}
-                </Link>
-              </span>
-            ))}
-          </nav>
-        )}
-
-        <div className="mt-4">
-        <FileBrowser
-          currentFolderId={currentFolderId}
-          base={base}
-          folders={folderRows}
-          files={fileRows}
-          moveTargets={moveTargets}
-          currency={currency}
-          endpoints={{
-            move: "/api/items/move",
-            folders: "/api/folders",
-            delete: "/api/items/delete",
-            archiveQuote: "/api/studio/archive/quote",
-            archiveCreate: "/api/studio/archive/create",
-          }}
-          baseBody={{ customerId: String(customer._id) }}
-        />
-        </div>
-      </section>
-
-      <section className="mt-8">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          Deep Storage (cheapest, approx Rs 180/1TB/Month)
-          <InfoHint text="Long-term frozen archives of this customer's delivered files. Browsing is instant; retrieving takes up to 48 hours and is billed separately." />
-        </h2>
-        <div className="mt-4">
-          <ArchiveList
-            archives={archives}
-            browseBase={`${base}/archive`}
-            emptyHint="No archives yet. Select delivered files above and choose “Move to Deep Storage”."
-          />
-        </div>
-      </section>
-
-      <section className="mt-8 rounded-lg border border-black/10 p-6 dark:border-white/10">
+      <section className="mt-10 rounded-lg border border-black/10 p-6 dark:border-white/10">
         <h2 className="text-sm font-semibold">Share access with your customer</h2>
         <p className="mt-1 text-sm text-black/50 dark:text-white/50">
           Tell your customer to open the link below and sign in with{" "}

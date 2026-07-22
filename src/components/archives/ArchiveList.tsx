@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatBytes } from "@/lib/format";
 import { archiveStatus } from "@/lib/archiveStatus";
 
 export type ArchiveRow = {
@@ -10,14 +11,8 @@ export type ArchiveRow = {
   termYears: number;
 };
 
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 MB";
-  const mb = bytes / (1024 * 1024);
-  if (mb < 1024) return `${mb.toFixed(1)} MB`;
-  return `${(mb / 1024).toFixed(2)} GB`;
-}
 
-// Shared Deep Storage listing, used by both the customer portal and the studio
+// Shared Cold Drive listing, used by both the customer portal and the studio
 // customer page. `browseBase` is the URL prefix for the per-archive detail page.
 export default function ArchiveList({
   archives,

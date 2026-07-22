@@ -39,7 +39,7 @@ export async function chooseType(
 }
 
 // Personal: finish setup and go to storage. Uploading is free (Temporary
-// tier); Regular storage is purchased later on the portal, so there's no plan
+// tier); Hot drive is purchased later on the portal, so there's no plan
 // to choose here.
 export async function activatePersonal(): Promise<void> {
   const { userId, email } = await me();

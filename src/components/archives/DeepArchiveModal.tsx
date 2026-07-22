@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Shared "freeze to Deep Storage" modal — used by the studio side (direct
+// Shared "freeze to Cold Drive" modal — used by the studio side (direct
 // archive of selected files) AND the customer Payment Pending list. Only the
 // quote/finalize endpoints + extra body differ. Parent mounts it when open.
 export default function DeepArchiveModal({
@@ -80,7 +80,7 @@ export default function DeepArchiveModal({
       onClose();
       onDone?.();
       alert(
-        "Payment received (mock). The files are being frozen into Deep Storage in the background."
+        "Payment received (mock). The files are being frozen into Cold Drive in the background."
       );
       router.refresh();
     } else {
@@ -92,7 +92,7 @@ export default function DeepArchiveModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-md rounded-xl border border-black/10 bg-background p-6 shadow-xl dark:border-white/15">
-        <h3 className="text-lg font-semibold">Freeze to Deep Storage</h3>
+        <h3 className="text-lg font-semibold">Freeze to Cold Drive</h3>
         {subtitle && (
           <p className="mt-1 text-sm text-black/60 dark:text-white/60">
             {subtitle}
@@ -138,7 +138,7 @@ export default function DeepArchiveModal({
             <span>
               Kept where they are
               <span className="block text-xs text-black/50 dark:text-white/50">
-                Leave them in Temporary / Regular storage.
+                Leave them in Temporary / Hot drive.
               </span>
             </span>
           </label>
@@ -151,9 +151,9 @@ export default function DeepArchiveModal({
               className="mt-0.5"
             />
             <span>
-              Deleted from Temporary / Regular storage
+              Deleted from Temporary / Hot drive
               <span className="block text-xs text-black/50 dark:text-white/50">
-                Remove the originals once they&apos;re safely in Deep Storage.
+                Remove the originals once they&apos;re safely in Cold Drive.
               </span>
             </span>
           </label>

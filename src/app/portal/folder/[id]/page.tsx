@@ -37,13 +37,13 @@ export default async function FolderPage({
   const currency = await getCurrency();
 
   const folderHref = (fid: string) => `/portal/folder/${fid}?tier=${tier}`;
-  const tierLabel = tier === "regular" ? "Regular storage" : "Temporary storage";
+  const tierLabel = tier === "regular" ? "Hot drive" : "Temporary storage";
   const current = drive.breadcrumb[drive.breadcrumb.length - 1];
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-12">
       <Link href="/portal" className="text-sm text-blue-600 hover:underline">
-        ← Back to My Storage
+        ← Back to My Uploads
       </Link>
 
       <h1 className="mt-3 text-2xl font-semibold">📁 {current?.name}</h1>

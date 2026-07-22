@@ -53,14 +53,14 @@ const FileSchema = new Schema(
       enum: ["pending", "ready"],
       default: "pending",
     },
-    // Deep Storage tag (applies to a customer's own files AND to studio-shared
+    // Cold Drive tag (applies to a customer's own files AND to studio-shared
     // files the customer has tagged — studio files are per-delivery so the tag
     // is unambiguous):
     //   "none"      = not selected.
-    //   "selected"  = tagged "Selected for deep storage", waiting for payment.
+    //   "selected"  = tagged "Selected for cold drive", waiting for payment.
     //                 The file STAYS visible where it is.
-    //   "moved"     = archived to Deep Storage; a live copy is kept in place
-    //                 (tagged "Moved to deep").
+    //   "moved"     = archived to Cold Drive; a live copy is kept in place
+    //                 (tagged "Moved to cold").
     //   "archiving" = paid, sources marked for deletion; worker is freezing then
     //                 removing them.
     deepStatus: {

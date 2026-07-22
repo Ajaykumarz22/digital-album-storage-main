@@ -119,13 +119,13 @@ export default async function SharedSpacePage({
         href="/portal"
         className="text-sm text-black/50 hover:underline dark:text-white/50"
       >
-        ← Back to My Space
+        ← Back to My Uploads
       </Link>
 
       <h1 className="mt-3 text-2xl font-semibold">Shared by {studioName}</h1>
       <p className="mt-1 text-sm text-black/60 dark:text-white/60">
-        These files auto-delete when their time runs out. Move them to Regular
-        or Deep Storage, or download them, before they expire.
+        These files auto-delete when their time runs out. Move them to Hot
+        or Cold Drive, or download them, before they expire.
       </p>
 
       {locked && (

@@ -2,6 +2,8 @@
 
 import { useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
+import { formatBytes, formatDate } from "@/lib/format";
+import { FileGlyph, KebabButton } from "@/components/files/rowUi";
 
 export type SharedFile = {
   id: string;
@@ -13,23 +15,9 @@ export type SharedFile = {
 };
 export type ExpiryGroup = { days: number; label: string; urgent: boolean; files: SharedFile[] };
 
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
-}
-function formatBytes(bytes: number): string {
-  if (!bytes) return "0 MB";
-  const mb = bytes / (1024 * 1024);
-  if (mb < 1024) return `${mb.toFixed(1)} MB`;
-  return `${(mb / 1024).toFixed(2)} GB`;
-}
-
-// Shared files grouped by days-left, with per-file/bulk actions to move them to
-// Regular storage or Deep Storage. "Move" pulls files out of here immediately.
+// Shared files grouped by days-left, styled like the My Uploads list: a row per
+// file (checkbox · icon · name/meta · ⋮ menu) with bulk + per-file actions to
+// move them to Hot drive or Cold Drive.
 export default function SharedFileGroups({
   groups,
   studioSpace,
@@ -44,8 +32,8 @@ export default function SharedFileGroups({
   const router = useRouter();
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
-  // The per-file "Move" popup: which file's menu is open (null = none), and
-  // where to render it (fixed, so it escapes the table's overflow clipping).
+  // Per-file ⋮ menu: which file's menu is open, fixed-positioned so it escapes
+  // the list's clipping.
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(
     null
@@ -72,7 +60,7 @@ export default function SharedFileGroups({
 
   async function moveToRegular(fileIds: string[]) {
     if (!canImport) {
-      alert("Choose a storage plan first to move files to Regular storage.");
+      alert("Choose a storage plan first to move files to Hot drive.");
       return;
     }
     await run("/api/portal/import-files", { studioSpace, fileIds });
@@ -110,6 +98,8 @@ export default function SharedFileGroups({
   }
 
   const selected = [...sel];
+  const rowClass =
+    "flex items-center gap-3 border-b border-black/5 px-3 py-2.5 last:border-0 hover:bg-black/[0.02] dark:border-white/5 dark:hover:bg-white/[0.03]";
 
   return (
     <div className="mt-6 space-y-8">
@@ -123,7 +113,7 @@ export default function SharedFileGroups({
             disabled={busy}
             className="rounded-md border border-black/15 px-3 py-1.5 font-medium hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:hover:bg-white/10"
           >
-            Move to Regular storage
+            Move to Hot drive
           </button>
           <button
             type="button"
@@ -131,7 +121,7 @@ export default function SharedFileGroups({
             disabled={busy}
             className="rounded-md border border-blue-500/40 px-3 py-1.5 font-medium text-blue-600 hover:bg-blue-500/10 disabled:opacity-50"
           >
-            Move to Deep Storage
+            Move to Cold Drive
           </button>
           <button
             type="button"
@@ -145,129 +135,102 @@ export default function SharedFileGroups({
 
       {groups.map((g) => (
         <section key={g.days}>
-          <h2 className={`mb-3 text-lg font-semibold ${g.urgent ? "text-red-600" : ""}`}>
+          <h2
+            className={`mb-2 text-sm font-semibold ${
+              g.urgent ? "text-red-600" : ""
+            }`}
+          >
             {g.label}
           </h2>
-          <div className="overflow-x-auto rounded-lg border border-black/10 dark:border-white/10">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-black/10 text-black/50 dark:border-white/10 dark:text-white/50">
-                <tr>
-                  <th className="w-10 px-4 py-3"></th>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Size</th>
-                  <th className="px-4 py-3 font-medium">Shared on</th>
-                  <th className="px-4 py-3 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {g.files.map((f) => (
-                  <tr
-                    key={f.id}
-                    className="border-b border-black/5 last:border-0 dark:border-white/5"
-                  >
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={sel.has(f.id)}
-                        onChange={() => toggle(f.id)}
-                        aria-label={`Select ${f.filename}`}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div>
-                        {f.filename}
-                        {f.deepTag === "selected" && (
-                          <span className="ml-2 inline-flex items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600">
-                            Selected for deep storage
-                            <button
-                              type="button"
-                              onClick={() => unselectDeep([f.id])}
-                              disabled={busy}
-                              aria-label="Remove from Deep Storage selection"
-                              className="font-semibold hover:opacity-70 disabled:opacity-50"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        )}
-                        {f.deepTag === "moved" && (
-                          <span className="ml-2 inline-flex items-center rounded-full border border-black/15 px-2 py-0.5 text-xs text-black/50 dark:border-white/20 dark:text-white/50">
-                            Moved to deep
-                          </span>
-                        )}
-                      </div>
-                      {f.folderPath && (
-                        <div className="text-xs text-black/40 dark:text-white/40">
-                          📁 {f.folderPath}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">{formatBytes(f.size)}</td>
-                    <td className="px-4 py-3 text-black/60 dark:text-white/60">
-                      {formatDate(f.createdAt)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {locked ? (
-                        <span className="text-black/40 dark:text-white/40">Locked</span>
-                      ) : (
-                        <div className="relative inline-flex items-center gap-4">
-                          <a
-                            href={`/api/files/${f.id}/download`}
-                            className="font-medium text-blue-600 hover:underline"
-                          >
-                            Download
-                          </a>
-                          <button
-                            type="button"
-                            onClick={(e) => openMenu(f.id, e)}
-                            disabled={busy}
-                            className="font-medium text-blue-600 hover:underline disabled:opacity-50"
-                          >
-                            Move
-                          </button>
-                          {menuFor === f.id && menuPos && (
-                            <>
-                              <div
-                                className="fixed inset-0 z-40"
-                                onClick={() => setMenuFor(null)}
-                              />
-                              <div
-                                style={{
-                                  position: "fixed",
-                                  top: menuPos.top,
-                                  right: menuPos.right,
-                                }}
-                                className="z-50 w-56 rounded-md border border-black/10 bg-background p-1 text-left shadow-lg dark:border-white/15"
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() => moveToRegular([f.id])}
-                                  disabled={busy}
-                                  className="block w-full rounded px-3 py-2 text-left hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
-                                >
-                                  Move to Regular storage
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => moveToDeep([f.id])}
-                                  disabled={busy}
-                                  className="block w-full rounded px-3 py-2 text-left hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
-                                >
-                                  Move to Deep Storage
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="overflow-hidden rounded-lg border border-black/10 dark:border-white/10">
+            {g.files.map((f) => (
+              <div key={f.id} className={rowClass}>
+                <input
+                  type="checkbox"
+                  checked={sel.has(f.id)}
+                  onChange={() => toggle(f.id)}
+                  aria-label={`Select ${f.filename}`}
+                  className="h-4 w-4 shrink-0"
+                />
+                <FileGlyph />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm">{f.filename}</span>
+                    {f.deepTag === "selected" && (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600">
+                        Selected for cold drive
+                        <button
+                          type="button"
+                          onClick={() => unselectDeep([f.id])}
+                          disabled={busy}
+                          aria-label="Remove from Cold Drive selection"
+                          className="font-semibold hover:opacity-70 disabled:opacity-50"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
+                    {f.deepTag === "moved" && (
+                      <span className="shrink-0 rounded-full border border-black/15 px-2 py-0.5 text-xs text-black/50 dark:border-white/20 dark:text-white/50">
+                        Moved to cold
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-black/50 dark:text-white/50">
+                    {formatBytes(f.size)} · {formatDate(f.createdAt)}
+                    {f.folderPath ? ` · 📁 ${f.folderPath}` : ""}
+                  </div>
+                </div>
+                {locked ? (
+                  <span className="shrink-0 text-xs text-black/40 dark:text-white/40">
+                    Locked
+                  </span>
+                ) : (
+                  <KebabButton
+                    label={`Actions for ${f.filename}`}
+                    disabled={busy}
+                    onClick={(e) => openMenu(f.id, e)}
+                  />
+                )}
+              </div>
+            ))}
           </div>
         </section>
       ))}
+
+      {menuFor && menuPos && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setMenuFor(null)} />
+          <div
+            style={{ position: "fixed", top: menuPos.top, right: menuPos.right }}
+            className="z-50 w-52 rounded-md border border-black/10 bg-background p-1 text-left shadow-lg dark:border-white/15"
+          >
+            <a
+              href={`/api/files/${menuFor}/download`}
+              onClick={() => setMenuFor(null)}
+              className="block rounded px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              Download
+            </a>
+            <button
+              type="button"
+              onClick={() => moveToRegular([menuFor])}
+              disabled={busy}
+              className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+            >
+              Move to Hot drive
+            </button>
+            <button
+              type="button"
+              onClick={() => moveToDeep([menuFor])}
+              disabled={busy}
+              className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+            >
+              Move to Cold Drive
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

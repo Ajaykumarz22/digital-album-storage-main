@@ -7,7 +7,7 @@ import { getMyCustomerAccounts } from "@/lib/customer";
 import { resolveArchiveSource } from "@/lib/archiveSource";
 import { FileModel } from "@/models/File";
 
-// "Move to Deep Storage" = TAG the selected files "selected for deep storage".
+// "Move to Cold Drive" = TAG the selected files "selected for cold drive".
 // Nothing is copied or moved; the files stay visible where they are and show up
 // in the Payment Pending list until paid for (or unselected).
 export async function POST(req: Request) {
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     if (!myAccounts.some((a) => String(a._id) === studioSpace)) {
       return NextResponse.json({ error: "Not found." }, { status: 404 });
     }
-    // Empty fileIds = the WHOLE delivery (studio-row "Move to Deep Storage").
+    // Empty fileIds = the WHOLE delivery (studio-row "Move to Cold Drive").
     const q: Record<string, unknown> = {
       customerId: studioSpace,
       ownerType: "studio",
