@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getCurrency } from "@/lib/geo";
 import { deepPerTB } from "@/lib/archivePricing";
 import { regularPerTB } from "@/lib/regularPricing";
+import Faq from "@/components/Faq";
 
 export const metadata: Metadata = { title: "Pricing · Reel Pouches" };
 
@@ -38,6 +39,8 @@ export default async function PricingPage() {
         {/* Cold storage — deep archive */}
         <PriceCard title="Cold storage" perMonth={money(cold.perMonth)} perYear={money(cold.perYear)} />
       </div>
+
+      <Faq />
     </div>
   );
 }
