@@ -90,6 +90,14 @@ export function deepArchivePricePerTBMonth(currency: Currency): string {
   return `$${usd.toFixed(2)}`;
 }
 
+// Cold Drive price per TB, as raw numbers (month + year total) in the chosen
+// currency — for the pricing page.
+export function deepPerTB(currency: Currency): { perMonth: number; perYear: number } {
+  const usd = AWS_DEEP_ARCHIVE_USD_PER_TB_MONTH + MARKUP_USD_PER_TB_MONTH;
+  const perMonth = currency === "INR" ? usd * USD_TO_INR : usd;
+  return { perMonth: round2(perMonth), perYear: round2(perMonth * 12) };
+}
+
 export type RestoreQuote = { sizeBytes: number; usd: number; inr: number };
 
 // One-time fee to retrieve a whole archive back from cold drive.

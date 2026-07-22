@@ -14,6 +14,7 @@ export default async function Header() {
   if (!role && isSignedIn) menuItems.push({ href: "/setup", label: "Finish setup" });
   if (role) menuItems.push({ href: "/setup", label: "Welcome & FAQs" });
   if (role) menuItems.push({ href: "/account", label: "Subscription" });
+  menuItems.push({ href: "/pricing", label: "Pricing" });
 
   return (
     <header className="sticky top-0 z-40 border-b border-black/10 bg-background dark:border-white/10">

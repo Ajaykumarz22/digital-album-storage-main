@@ -50,6 +50,15 @@ export function regularYearlyPrice(q: RegularQuote, currency: Currency): number 
   return currency === "INR" ? q.yearlyInr : q.yearlyUsd;
 }
 
+// Hot storage price per TB, as raw numbers (month + year total) in the chosen
+// currency — for the pricing page.
+export function regularPerTB(currency: Currency): { perMonth: number; perYear: number } {
+  const q = quoteRegular(1024);
+  return currency === "INR"
+    ? { perMonth: q.monthlyInr, perYear: q.yearlyInr }
+    : { perMonth: q.monthlyUsd, perYear: q.yearlyUsd };
+}
+
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
