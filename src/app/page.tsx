@@ -28,7 +28,7 @@ export default async function Home() {
   return (
     <div className="flex flex-col">
       {/* ---------- HERO ---------- */}
-      <section className="mx-auto flex w-full max-w-6xl flex-col items-center gap-10 px-6 py-12 sm:py-16 lg:flex-row lg:gap-16 lg:py-24">
+      <section className="mx-auto flex w-full max-w-6xl flex-col items-center gap-8 px-6 py-8 sm:py-10 lg:flex-row lg:gap-16 lg:py-14">
         <div className="flex flex-1 flex-col items-center text-center lg:items-start lg:text-left">
           <span className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium text-black/60 dark:border-white/10 dark:text-white/60">
             Long-term storage for your memories
@@ -79,7 +79,7 @@ export default async function Home() {
 
       {/* ---------- PROBLEM ---------- */}
       <section className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
+        <div className="mx-auto max-w-3xl px-6 py-10 text-center sm:py-12">
           <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
             We all keep paying to store photos we never open.
           </h2>
@@ -94,14 +94,14 @@ export default async function Home() {
 
       {/* ---------- THREE WAYS TO STORE ---------- */}
       <section className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-6 py-10 sm:py-12">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
               Three ways to store - pick what each memory needs
             </h2>
           </div>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
             <StoreCard
               icon={<ClockIcon />}
               title="My Uploads"
@@ -148,7 +148,7 @@ export default async function Home() {
 
       {/* ---------- WHY REEL POUCHES ---------- */}
       <section className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-6 py-10 sm:py-12">
           <div className="grid gap-8 sm:grid-cols-3">
             <Value
               title="Up to 9× cheaper"
@@ -168,8 +168,8 @@ export default async function Home() {
 
       {/* ---------- FOR STUDIOS ---------- */}
       <section className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-          <div className="rounded-2xl border border-black/10 bg-background p-8 sm:p-12 dark:border-white/10">
+        <div className="mx-auto max-w-5xl px-6 py-10 sm:py-12">
+          <div className="rounded-2xl border border-black/10 bg-background p-8 sm:p-10 dark:border-white/10">
             <span className="text-xs font-semibold uppercase tracking-wide text-black/40 dark:text-white/40">
               For photo &amp; video studios
             </span>
@@ -189,14 +189,14 @@ export default async function Home() {
 
       {/* ---------- FAQ ---------- */}
       <section className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-3xl px-6 py-10 sm:py-12">
           <Faq />
         </div>
       </section>
 
       {/* ---------- FINAL CTA ---------- */}
       <section className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-3xl px-6 py-20 text-center">
+        <div className="mx-auto max-w-3xl px-6 py-12 text-center">
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Start keeping your memories today.
           </h2>
