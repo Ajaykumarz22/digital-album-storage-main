@@ -22,6 +22,9 @@ const AccountSchema = new Schema(
     // Purchased Regular-storage quota in bytes (custom GB, top-up, billed
     // yearly). Files in the "regular" tier count against this.
     regularBytes: { type: Number, default: 0 },
+    // Purchased Cold Drive quota in bytes (prepaid, top-up, billed yearly).
+    // Archived (frozen) data counts against this.
+    coldBytes: { type: Number, default: 0 },
 
     // Business accounts:
     businessName: { type: String, default: "" },

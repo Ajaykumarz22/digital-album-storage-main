@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { connectToDatabase } from "@/lib/mongodb";
@@ -9,11 +10,9 @@ import { getMyCustomerAccounts } from "@/lib/customer";
 import { getCurrentRole } from "@/lib/roles";
 import { getMyAccount, getMyOwner } from "@/lib/account";
 import BuyRegularStorage from "./BuyRegularStorage";
+import BuyColdDrive from "@/components/portal/BuyColdDrive";
 import { getCurrency } from "@/lib/geo";
 import ArchiveList, { type ArchiveRow } from "@/components/archives/ArchiveList";
-import PendingDeepStorage from "@/components/archives/PendingDeepStorage";
-import ColdPayButton from "@/components/archives/ColdPayButton";
-import { getSelectedDeepFiles, folderPathMap } from "@/lib/deepSelection";
 import { loadTier } from "@/lib/portalDrive";
 import FileManager from "@/components/files/FileManager";
 import FileBrowser from "@/components/files/FileBrowser";
@@ -46,38 +45,17 @@ export default async function PortalPage() {
     studios.map((s) => [String(s._id), s.name || s.email || "Studio"])
   );
 
-  const customerIds = accounts.map((a) => String(a._id));
   const temp = await loadTier(owner.accountId, "temporary");
   const regular = await loadTier(owner.accountId, "regular");
   const purchasedGb = Number((regularBytes / 1024 ** 3).toFixed(1));
+  const coldPurchasedGb = Number(((account?.coldBytes ?? 0) / 1024 ** 3).toFixed(1));
   const archives = await loadMyArchives(owner.accountId);
-  const studioNameByCustomer = new Map(
-    accounts.map((a) => [
-      String(a._id),
-      studioNameById.get(String(a.studioId)) ?? "Studio",
-    ])
-  );
-  const pending = await loadPendingDeep(
-    owner.accountId,
-    customerIds,
-    studioNameByCustomer
-  );
   const sharedRows = await loadSharedRows(
     accounts.map((a) => ({ id: String(a._id), studioId: String(a.studioId) })),
     studioNameById,
     owner.accountId
   );
   const canImport = regularBytes > 0;
-
-  // Totals for the Cold Drive "Pay & archive" button (title row).
-  const pendingCount =
-    pending.studioGroups.reduce((s, g) => s + g.fileCount, 0) +
-    pending.folderGroups.reduce((s, g) => s + g.fileCount, 0) +
-    pending.ownItems.length;
-  const pendingBytes =
-    pending.studioGroups.reduce((s, g) => s + g.sizeBytes, 0) +
-    pending.folderGroups.reduce((s, g) => s + g.sizeBytes, 0) +
-    pending.ownItems.reduce((s, i) => s + i.size, 0);
 
   const uploadTab = (
     <div className="space-y-4">
@@ -91,7 +69,8 @@ export default async function PortalPage() {
           folders: "/api/portal/folders",
         }}
         moveAllRegularEndpoint="/api/portal/regular/move-all"
-        moveAllDeepEndpoint="/api/portal/deep-cart/add-all"
+        moveAllDeepEndpoint="/api/portal/cold/archive-all"
+        coldBuyCurrency={currency}
       />
 
       {/* Temporary Storage - your own uploads + studio deliveries */}
@@ -114,8 +93,7 @@ export default async function PortalPage() {
               move: "/api/portal/move",
               folders: "/api/portal/folders",
               delete: "/api/portal/delete",
-              deepSelect: "/api/portal/deep-cart/add",
-              deepUnselect: "/api/portal/deep-cart/remove",
+              deepSelect: "/api/portal/cold/archive",
               moveToRegular: "/api/portal/regular/move",
               importShared: "/api/portal/import",
             }}
@@ -128,20 +106,40 @@ export default async function PortalPage() {
 
   const deepTab = (
     <div className="mt-6 space-y-4">
-      {/* Title row: "Cold Drive" + right-aligned "Pay & archive" */}
+      {/* Title row: "Cold Drive · Own X GB" + right-aligned "Buy Cold Drive" */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold">Cold Drive</h1>
-        <ColdPayButton
-          totalCount={pendingCount}
-          totalBytes={pendingBytes}
-          currency={currency}
-        />
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-lg font-semibold">Cold Drive</h1>
+          <span className="text-xs text-black/50 dark:text-white/50">
+            {coldPurchasedGb} GB
+          </span>
+        </div>
+        <BuyColdDrive currency={currency} />
       </div>
-      <PendingDeepStorage pending={pending} />
       <ArchiveList
         archives={archives}
         browseBase="/portal/archive"
-        emptyHint="No archives yet. Select files in Hot drive and choose “Move to Cold Drive” to keep them long-term at the lowest cost."
+        emptyHint="No files in Cold Drive yet."
+        emptyAction={
+          <Link
+            href="/portal/add?to=cold"
+            className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add files
+          </Link>
+        }
       />
       <Faq />
     </div>
@@ -154,7 +152,7 @@ export default async function PortalPage() {
         <div className="flex items-baseline gap-2">
           <h1 className="text-lg font-semibold">Hot Drive</h1>
           <span className="text-xs text-black/50 dark:text-white/50">
-            Own {purchasedGb} GB
+            {purchasedGb} GB
           </span>
         </div>
         <BuyRegularStorage currency={currency} />
@@ -171,12 +169,32 @@ export default async function PortalPage() {
             files={regular.fileRows}
             moveTargets={regular.moveTargets}
             currency={currency}
+            emptyHint="No files in Hot Drive yet."
+            emptyAction={
+              <Link
+                href="/portal/add?to=hot"
+                className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add files
+              </Link>
+            }
             endpoints={{
               move: "/api/portal/move",
               folders: "/api/portal/folders",
               delete: "/api/portal/delete",
-              deepSelect: "/api/portal/deep-cart/add",
-              deepUnselect: "/api/portal/deep-cart/remove",
+              deepSelect: "/api/portal/cold/archive",
             }}
           />
         </div>
@@ -212,117 +230,6 @@ async function loadMyArchives(accountId: string): Promise<ArchiveRow[]> {
     status: a.status,
     termYears: a.termYears,
   }));
-}
-
-async function loadPendingDeep(
-  accountId: string,
-  customerIds: string[],
-  studioNameByCustomer: Map<string, string>
-) {
-  const [files, pathById] = await Promise.all([
-    getSelectedDeepFiles(accountId, customerIds),
-    folderPathMap(accountId, customerIds),
-  ]);
-
-  // Studio deliveries collapse into ONE row each.
-  const studio = new Map<
-    string,
-    { studioSpace: string; name: string; fileIds: string[]; fileCount: number; sizeBytes: number }
-  >();
-  // Own selected files, grouped by folderId ("root" = no folder).
-  const ownByFolder = new Map<string, typeof files>();
-
-  for (const f of files) {
-    if (f.ownerType === "studio" && f.customerId) {
-      const key = String(f.customerId);
-      const g =
-        studio.get(key) ??
-        {
-          studioSpace: key,
-          name: studioNameByCustomer.get(key) ?? "Studio",
-          fileIds: [],
-          fileCount: 0,
-          sizeBytes: 0,
-        };
-      g.fileIds.push(String(f._id));
-      g.fileCount += 1;
-      g.sizeBytes += f.size || 0;
-      studio.set(key, g);
-    } else {
-      const key = f.folderId ? String(f.folderId) : "root";
-      const arr = ownByFolder.get(key) ?? [];
-      arr.push(f);
-      ownByFolder.set(key, arr);
-    }
-  }
-
-  // For each folder with selected files, how many files does it hold total? A
-  // folder collapses into one row only if EVERY file in it is selected.
-  const folderIds = [...ownByFolder.keys()].filter((k) => k !== "root");
-  const totalByFolder = new Map<string, number>();
-  if (folderIds.length) {
-    const agg = await FileModel.aggregate([
-      {
-        $match: {
-          ownerType: "customer",
-          ownerAccountId: new mongoose.Types.ObjectId(accountId),
-          status: "ready",
-          deepStatus: { $ne: "archiving" },
-          folderId: { $in: folderIds.map((id) => new mongoose.Types.ObjectId(id)) },
-        },
-      },
-      { $group: { _id: "$folderId", total: { $sum: 1 } } },
-    ]);
-    for (const a of agg) totalByFolder.set(String(a._id), a.total as number);
-  }
-
-  const folderGroups: {
-    folderId: string;
-    name: string;
-    fileIds: string[];
-    fileCount: number;
-    sizeBytes: number;
-  }[] = [];
-  const ownItems: {
-    id: string;
-    filename: string;
-    size: number;
-    folderPath: string;
-  }[] = [];
-
-  for (const [key, sel] of ownByFolder) {
-    const asItems = () =>
-      sel.forEach((f) =>
-        ownItems.push({
-          id: String(f._id),
-          filename: f.filename,
-          size: f.size,
-          folderPath: key === "root" ? "" : pathById.get(key) ?? "",
-        })
-      );
-    if (key === "root") {
-      asItems();
-      continue;
-    }
-    const total = totalByFolder.get(key) ?? sel.length;
-    if (sel.length >= total && total > 0) {
-      folderGroups.push({
-        folderId: key,
-        name: pathById.get(key) ?? "Folder",
-        fileIds: sel.map((f) => String(f._id)),
-        fileCount: sel.length,
-        sizeBytes: sel.reduce((s, f) => s + (f.size || 0), 0),
-      });
-    } else {
-      asItems();
-    }
-  }
-
-  return {
-    studioGroups: [...studio.values()],
-    folderGroups,
-    ownItems,
-  };
 }
 
 /* ------- Shared deliveries → folder-style rows inside Temporary Storage ------- */

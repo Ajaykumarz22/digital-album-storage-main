@@ -85,8 +85,7 @@ export default async function FolderPage({
           move: "/api/portal/move",
           folders: "/api/portal/folders",
           delete: "/api/portal/delete",
-          deepSelect: "/api/portal/deep-cart/add",
-          deepUnselect: "/api/portal/deep-cart/remove",
+          deepSelect: "/api/portal/cold/archive",
           ...(tier === "temporary"
             ? { moveToRegular: "/api/portal/regular/move" }
             : {}),

@@ -4,7 +4,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { customerScope, getMyEmail } from "@/lib/portal";
 import { getMyAccount, regularUsedBytes } from "@/lib/account";
 import { getMyCustomerAccounts } from "@/lib/customer";
-import { humanBytes } from "@/lib/archivePricing";
+import { MIN_REGULAR_GB } from "@/lib/regularPricing";
 import { Studio } from "@/models/Studio";
 import { FileModel } from "@/models/File";
 import {
@@ -70,12 +70,12 @@ export async function POST() {
   const capacity = account.regularBytes ?? 0;
   if (used + incoming > capacity) {
     const shortBy = used + incoming - capacity;
+    const requiredGb = Math.max(MIN_REGULAR_GB, Math.ceil(shortBy / 1024 ** 3));
     return NextResponse.json(
       {
-        error: `Not enough Hot drive - you need ${humanBytes(
-          shortBy
-        )} more. Buy more storage first.`,
+        error: "Not enough Hot drive capacity.",
         needMore: true,
+        requiredGb,
       },
       { status: 402 }
     );

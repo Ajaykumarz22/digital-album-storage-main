@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import BuyStorageModal from "@/components/portal/BuyStorageModal";
 
-// "Buy Hot drive" button + modal. Tops up the account's Hot (regular) quota.
-export default function BuyRegularStorage({
+// "Buy Cold Drive" button + modal. Tops up the account's Cold Drive capacity.
+export default function BuyColdDrive({
   currency,
-  label = "Buy Hot drive",
+  label = "Buy Cold Drive",
 }: {
   currency: "USD" | "INR";
   label?: string;
@@ -27,16 +27,15 @@ export default function BuyRegularStorage({
 
       {open && (
         <BuyStorageModal
-          title="Buy Hot drive"
-          quoteEndpoint="/api/portal/regular/quote"
-          buyEndpoint="/api/portal/regular/buy"
+          title="Buy Cold Drive"
+          quoteEndpoint="/api/portal/cold/quote"
+          buyEndpoint="/api/portal/cold/buy"
           currency={currency}
-          minGb={20}
-          intro="Instant-access storage, billed yearly. Minimum 20 GB. Adds to your existing quota."
+          intro="Cheap long-term capacity, billed yearly. Minimum 50 GB. Adds to your existing quota, then your files move in for free."
           onClose={() => setOpen(false)}
           onPurchased={(gb) => {
             setOpen(false);
-            alert(`Added ${gb} GB of Hot drive (mock payment).`);
+            alert(`Added ${gb} GB of Cold Drive (mock payment).`);
             router.refresh();
           }}
         />

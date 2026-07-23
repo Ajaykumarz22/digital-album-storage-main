@@ -11,7 +11,7 @@ const USD_TO_INR = 95;
 export const REGULAR_USD_PER_GB_MONTH =
   (IDRIVE_USD_PER_TB_MONTH + MARGIN_USD_PER_TB_MONTH) / 1024;
 
-export const MIN_REGULAR_GB = 50;
+export const MIN_REGULAR_GB = 20;
 const GiB = 1024 ** 3;
 
 export function gbToBytes(gb: number): number {

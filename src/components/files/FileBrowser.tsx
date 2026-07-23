@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { formatBytes, formatDate } from "@/lib/format";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type MouseEvent } from "react";
+import { useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import DeepArchiveModal from "@/components/archives/DeepArchiveModal";
 import { daysLeft } from "@/lib/lifecycle";
 import { FolderGlyph, FileGlyph, KebabButton } from "@/components/files/rowUi";
+import BuyStorageModal from "@/components/portal/BuyStorageModal";
 
 // A studio delivery shown as a folder-style row inside Temporary Storage.
 type SharedRow = {
@@ -26,7 +27,7 @@ type FileRow = {
   filename: string;
   size: number;
   createdAt: string;
-  deepTag?: "selected" | "moved" | null;
+  deepTag?: "moved" | null;
 };
 type MoveTarget = { id: string; path: string };
 
@@ -46,6 +47,8 @@ export default function FileBrowser({
   sharedRows = [],
   canImport = false,
   selectable = true,
+  emptyHint,
+  emptyAction,
 }: {
   currentFolderId: string | null;
   base: string;
@@ -59,9 +62,8 @@ export default function FileBrowser({
     // Studio side: direct archive with a price/pay modal (both present).
     archiveQuote?: string;
     archiveCreate?: string;
-    // Customer side: tag selection for Cold Drive / untag it.
+    // Customer side: archive a selection into Cold Drive (prepaid).
     deepSelect?: string;
-    deepUnselect?: string;
     // Temporary tier: move selection into paid Hot drive.
     moveToRegular?: string;
     // Studio-shared deliveries: copy the whole delivery into Hot drive.
@@ -85,6 +87,9 @@ export default function FileBrowser({
   // Multi-select checkboxes + bulk toolbar. Off for My Uploads (uses the
   // top "Actions" dropdown + per-row ⋮ menu instead).
   selectable?: boolean;
+  // Empty-state message + optional action (e.g. an "Add files" button).
+  emptyHint?: string;
+  emptyAction?: ReactNode;
 }) {
   const router = useRouter();
   const [selFiles, setSelFiles] = useState<Set<string>>(new Set());
@@ -134,16 +139,17 @@ export default function FileBrowser({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(bodyFor(ov)),
     });
+    const j = await res.json().catch(() => ({}));
     setBusy(false);
     setRowMenu(null);
+    if (res.status === 402 && j.requiredGb) {
+      setColdBuy({ gb: j.requiredGb as number, retry: () => moveToDeep(ov) });
+      return;
+    }
     if (res.ok) {
       if (!ov) clearSelection();
-      alert(
-        "Tagged for Cold Drive. They stay here, marked “Selected for cold drive”, and appear in your Payment Pending list - pay there to freeze them."
-      );
       router.refresh();
     } else {
-      const j = await res.json().catch(() => ({}));
       alert(j.error || "Could not move to Cold Drive.");
     }
   }
@@ -160,6 +166,12 @@ export default function FileBrowser({
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(
     null
   );
+  // Buy Cold Drive prompt when a per-item move is short on capacity; `retry`
+  // re-runs the move after a successful purchase.
+  const [coldBuy, setColdBuy] = useState<{
+    gb: number;
+    retry: () => void;
+  } | null>(null);
   function openRowMenu(row: RowMenu, e: MouseEvent<HTMLButtonElement>) {
     if (rowMenu?.id === row.id) {
       setRowMenu(null);
@@ -197,27 +209,25 @@ export default function FileBrowser({
     }
   }
   async function sharedMoveToDeep(studioSpace: string, studioName: string) {
-    if (
-      !window.confirm(
-        `Move all of ${studioName}'s files to Cold Drive? They'll wait in your Payment Pending list.`
-      )
-    )
-      return;
     setBusy(true);
     const res = await fetch(endpoints.deepSelect as string, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ studioSpace }),
     });
+    const j = await res.json().catch(() => ({}));
     setBusy(false);
     setRowMenu(null);
+    if (res.status === 402 && j.requiredGb) {
+      setColdBuy({
+        gb: j.requiredGb as number,
+        retry: () => sharedMoveToDeep(studioSpace, studioName),
+      });
+      return;
+    }
     if (res.ok) {
-      alert(
-        "All files tagged “Selected for cold drive” - pay in your Payment Pending list to freeze them."
-      );
       router.refresh();
     } else {
-      const j = await res.json().catch(() => ({}));
       alert(j.error || "Could not move.");
     }
   }
@@ -333,19 +343,6 @@ export default function FileBrowser({
     setArchiveOpen(true);
   }
 
-  async function unselectDeep(id: string) {
-    if (!endpoints.deepUnselect) return;
-    setBusy(true);
-    const res = await fetch(endpoints.deepUnselect, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fileIds: [id] }),
-    });
-    setBusy(false);
-    if (res.ok) router.refresh();
-    else alert("Could not update.");
-  }
-
   // Delete a single file straight from its row.
   async function deleteOneFile(fileId: string, name: string) {
     if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
@@ -406,9 +403,14 @@ export default function FileBrowser({
 
   if (total === 0 && sharedRows.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-black/15 p-6 text-sm text-black/50 dark:border-white/15 dark:text-white/50">
-        This folder is empty. Upload files or create a folder above.
-      </p>
+      <div className="rounded-lg border border-dashed border-black/15 p-6 text-center text-sm text-black/50 dark:border-white/15 dark:text-white/50">
+        <p>
+          {emptyHint ?? "This folder is empty. Upload files or create a folder above."}
+        </p>
+        {emptyAction && (
+          <div className="mt-4 flex justify-center">{emptyAction}</div>
+        )}
+      </div>
     );
   }
 
@@ -629,20 +631,6 @@ export default function FileBrowser({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="truncate text-sm">{f.filename}</span>
-                  {f.deepTag === "selected" && (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600">
-                      Selected for cold drive
-                      <button
-                        type="button"
-                        onClick={() => unselectDeep(f.id)}
-                        disabled={busy}
-                        aria-label="Remove from Cold Drive selection"
-                        className="font-semibold hover:opacity-70 disabled:opacity-50"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
                   {f.deepTag === "moved" && (
                     <span className="shrink-0 rounded-full border border-black/15 px-2 py-0.5 text-xs text-black/50 dark:border-white/20 dark:text-white/50">
                       Moved to cold
@@ -798,6 +786,23 @@ export default function FileBrowser({
           subtitle="Minimum 5 GB. Retrieving later takes up to 48 hours and is billed separately."
           onClose={() => setArchiveOpen(false)}
           onDone={clearSelection}
+        />
+      )}
+
+      {coldBuy && (
+        <BuyStorageModal
+          title="Buy Cold Drive"
+          quoteEndpoint="/api/portal/cold/quote"
+          buyEndpoint="/api/portal/cold/buy"
+          currency={currency}
+          initialGb={coldBuy.gb}
+          intro="You need more Cold Drive capacity to move these files. Buy the capacity below, then they'll move in automatically."
+          onClose={() => setColdBuy(null)}
+          onPurchased={() => {
+            const retry = coldBuy.retry;
+            setColdBuy(null);
+            retry();
+          }}
         />
       )}
     </div>

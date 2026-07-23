@@ -27,7 +27,6 @@ export default function DeepArchiveModal({
   const [busy, setBusy] = useState(false);
   const [name, setName] = useState("");
   const [years, setYears] = useState(7);
-  const [afterArchive, setAfterArchive] = useState<"keep" | "delete" | "">("");
   const [quote, setQuote] = useState<null | {
     years: number;
     usd: number;
@@ -59,10 +58,6 @@ export default function DeepArchiveModal({
       alert("Name your archive first.");
       return;
     }
-    if (!afterArchive) {
-      alert("Choose what to do with the original files.");
-      return;
-    }
     setBusy(true);
     const res = await fetch(finalizeUrl, {
       method: "POST",
@@ -72,7 +67,7 @@ export default function DeepArchiveModal({
         name: name.trim(),
         years,
         currency,
-        keepCopies: afterArchive === "keep",
+        keepCopies: false,
       }),
     });
     setBusy(false);
@@ -123,42 +118,6 @@ export default function DeepArchiveModal({
           className="mt-1 w-32 rounded-md border border-black/15 bg-transparent px-3 py-2 text-sm dark:border-white/15"
         />
 
-        <fieldset className="mt-4">
-          <legend className="text-sm font-medium">
-            After archiving, the original files should be:
-          </legend>
-          <label className="mt-2 flex items-start gap-2 text-sm">
-            <input
-              type="radio"
-              name="afterArchive"
-              checked={afterArchive === "keep"}
-              onChange={() => setAfterArchive("keep")}
-              className="mt-0.5"
-            />
-            <span>
-              Kept where they are
-              <span className="block text-xs text-black/50 dark:text-white/50">
-                Leave them in Temporary / Hot drive.
-              </span>
-            </span>
-          </label>
-          <label className="mt-2 flex items-start gap-2 text-sm">
-            <input
-              type="radio"
-              name="afterArchive"
-              checked={afterArchive === "delete"}
-              onChange={() => setAfterArchive("delete")}
-              className="mt-0.5"
-            />
-            <span>
-              Deleted from Temporary / Hot drive
-              <span className="block text-xs text-black/50 dark:text-white/50">
-                Remove the originals once they&apos;re safely in Cold Drive.
-              </span>
-            </span>
-          </label>
-        </fieldset>
-
         {quote && (
           <div className="mt-4 flex justify-between rounded-lg border border-black/10 bg-black/[0.02] p-4 text-sm font-semibold dark:border-white/10 dark:bg-white/[0.03]">
             <span>{quote.years}-year price</span>
@@ -188,7 +147,7 @@ export default function DeepArchiveModal({
             <button
               type="button"
               onClick={pay}
-              disabled={busy || !name.trim() || !afterArchive}
+              disabled={busy || !name.trim()}
               className="rounded-md bg-foreground px-4 py-2 font-medium text-background hover:opacity-90 disabled:opacity-50"
             >
               {busy ? "Working…" : `Pay ${money(quote.usd, quote.inr)}`}

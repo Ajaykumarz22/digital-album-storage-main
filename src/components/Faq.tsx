@@ -11,7 +11,7 @@ export default function Faq({ alwaysOpen = false }: { alwaysOpen?: boolean }) {
   return (
     <section className="mt-10">
       <h2 className="mb-3 text-lg font-semibold">FAQs</h2>
-      <div className="overflow-hidden rounded-lg border border-black/10 bg-background dark:border-white/10">
+      <div className="overflow-hidden rounded-lg border border-black/15 dark:border-white/10">
         {FAQ_ITEMS.map((it, i) => {
           const isOpen = alwaysOpen || open === i;
           return (

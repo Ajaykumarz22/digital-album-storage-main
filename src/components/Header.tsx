@@ -11,6 +11,7 @@ export default async function Header() {
 
   const menuItems: { href: string; label: string }[] = [];
   if (role === "business") menuItems.push({ href: "/dashboard", label: "Dashboard" });
+  if (role === "customer") menuItems.push({ href: "/portal", label: "My Uploads" });
   if (!role && isSignedIn) menuItems.push({ href: "/setup", label: "Finish setup" });
   if (role) menuItems.push({ href: "/setup", label: "Welcome & FAQs" });
   if (role) menuItems.push({ href: "/account", label: "Subscription" });

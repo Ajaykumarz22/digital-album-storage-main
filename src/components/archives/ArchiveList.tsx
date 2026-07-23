@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { type ReactNode } from "react";
 import { formatBytes } from "@/lib/format";
 import { archiveStatus } from "@/lib/archiveStatus";
 
@@ -18,16 +19,19 @@ export default function ArchiveList({
   archives,
   browseBase,
   emptyHint,
+  emptyAction,
 }: {
   archives: ArchiveRow[];
   browseBase: string;
   emptyHint: string;
+  emptyAction?: ReactNode;
 }) {
   if (archives.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-black/15 p-6 text-sm text-black/50 dark:border-white/15 dark:text-white/50">
-        {emptyHint}
-      </p>
+      <div className="rounded-lg border border-dashed border-black/15 p-6 text-center text-sm text-black/50 dark:border-white/15 dark:text-white/50">
+        <p>{emptyHint}</p>
+        {emptyAction && <div className="mt-4 flex justify-center">{emptyAction}</div>}
+      </div>
     );
   }
 

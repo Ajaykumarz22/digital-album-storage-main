@@ -117,12 +117,7 @@ export async function loadTier(
       filename: f.filename,
       size: f.size,
       createdAt: iso(f.createdAt),
-      deepTag:
-        f.deepStatus === "selected"
-          ? ("selected" as const)
-          : f.deepStatus === "moved"
-            ? ("moved" as const)
-            : null,
+      deepTag: f.deepStatus === "moved" ? ("moved" as const) : null,
     })),
   };
 }

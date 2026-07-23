@@ -4,6 +4,7 @@ import { useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { formatBytes, formatDate } from "@/lib/format";
 import { FileGlyph, KebabButton } from "@/components/files/rowUi";
+import BuyStorageModal from "@/components/portal/BuyStorageModal";
 
 export type SharedFile = {
   id: string;
@@ -11,7 +12,7 @@ export type SharedFile = {
   size: number;
   createdAt: string;
   folderPath: string;
-  deepTag?: "selected" | "moved" | null;
+  deepTag?: "moved" | null;
 };
 export type ExpiryGroup = { days: number; label: string; urgent: boolean; files: SharedFile[] };
 
@@ -23,15 +24,21 @@ export default function SharedFileGroups({
   studioSpace,
   canImport,
   locked,
+  currency,
 }: {
   groups: ExpiryGroup[];
   studioSpace: string;
   canImport: boolean;
   locked: boolean;
+  currency: "USD" | "INR";
 }) {
   const router = useRouter();
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [coldBuy, setColdBuy] = useState<{
+    gb: number;
+    retry: () => void;
+  } | null>(null);
   // Per-file ⋮ menu: which file's menu is open, fixed-positioned so it escapes
   // the list's clipping.
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -66,10 +73,25 @@ export default function SharedFileGroups({
     await run("/api/portal/import-files", { studioSpace, fileIds });
   }
   async function moveToDeep(fileIds: string[]) {
-    await run("/api/portal/deep-cart/add", { studioSpace, fileIds });
-  }
-  async function unselectDeep(fileIds: string[]) {
-    await run("/api/portal/deep-cart/remove", { fileIds });
+    setBusy(true);
+    const res = await fetch("/api/portal/cold/archive", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ studioSpace, fileIds, currency }),
+    });
+    const j = await res.json().catch(() => ({}));
+    setBusy(false);
+    setMenuFor(null);
+    if (res.status === 402 && j.requiredGb) {
+      setColdBuy({ gb: j.requiredGb as number, retry: () => moveToDeep(fileIds) });
+      return;
+    }
+    if (res.ok) {
+      clear();
+      router.refresh();
+    } else {
+      alert(j.error || "Could not move to Cold Drive.");
+    }
   }
   async function run(url: string, body: Record<string, unknown>) {
     setBusy(true);
@@ -156,20 +178,6 @@ export default function SharedFileGroups({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="truncate text-sm">{f.filename}</span>
-                    {f.deepTag === "selected" && (
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600">
-                        Selected for cold drive
-                        <button
-                          type="button"
-                          onClick={() => unselectDeep([f.id])}
-                          disabled={busy}
-                          aria-label="Remove from Cold Drive selection"
-                          className="font-semibold hover:opacity-70 disabled:opacity-50"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    )}
                     {f.deepTag === "moved" && (
                       <span className="shrink-0 rounded-full border border-black/15 px-2 py-0.5 text-xs text-black/50 dark:border-white/20 dark:text-white/50">
                         Moved to cold
@@ -230,6 +238,23 @@ export default function SharedFileGroups({
             </button>
           </div>
         </>
+      )}
+
+      {coldBuy && (
+        <BuyStorageModal
+          title="Buy Cold Drive"
+          quoteEndpoint="/api/portal/cold/quote"
+          buyEndpoint="/api/portal/cold/buy"
+          currency={currency}
+          initialGb={coldBuy.gb}
+          intro="You need more Cold Drive capacity to move these files. Buy the capacity below, then they'll move in automatically."
+          onClose={() => setColdBuy(null)}
+          onPurchased={() => {
+            const retry = coldBuy.retry;
+            setColdBuy(null);
+            retry();
+          }}
+        />
       )}
     </div>
   );

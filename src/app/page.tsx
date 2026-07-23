@@ -6,8 +6,7 @@ import { SignUpButton } from "@clerk/nextjs";
 import { getCurrentRole, homePathForRole, type Role } from "@/lib/roles";
 import { getCurrency } from "@/lib/geo";
 import { deepPerTB } from "@/lib/archivePricing";
-import { regularPerTB } from "@/lib/regularPricing";
-import Faq from "@/components/Faq";
+import FaqAccordion from "@/components/FaqAccordion";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -16,195 +15,287 @@ export default async function Home() {
   const homeHref = role ? homePathForRole(role) : "/setup";
 
   const currency = await getCurrency();
-  const money = (n: number) =>
-    currency === "INR"
-      ? `₹${Math.round(n).toLocaleString("en-IN")}`
-      : `$${n.toFixed(2)}`;
-  const hot = regularPerTB(currency);
   const cold = deepPerTB(currency);
+  const coldPerGb = cold.perMonth / 1024;
+  const coldRate =
+    currency === "INR"
+      ? `₹${coldPerGb.toFixed(3)}`
+      : `$${coldPerGb.toFixed(3)}`;
 
   const ctaProps = { isSignedIn, role, homeHref };
+  const tealBtn =
+    "rounded-2xl bg-teal-700 px-7 py-4 text-sm font-semibold text-white shadow-sm hover:bg-teal-800";
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col bg-emerald-50/50 dark:bg-neutral-950">
       {/* ---------- HERO ---------- */}
-      <section className="mx-auto flex w-full max-w-6xl flex-col items-center gap-8 px-6 py-8 sm:py-10 lg:flex-row lg:gap-16 lg:py-14">
-        <div className="flex flex-1 flex-col items-center text-center lg:items-start lg:text-left">
-          <span className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium text-black/60 dark:border-white/10 dark:text-white/60">
-            Long-term storage for your memories
-          </span>
+      <section className="bg-gradient-to-br from-emerald-50 via-emerald-50 to-teal-100/70 dark:from-teal-950/40 dark:via-transparent dark:to-transparent">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-10 px-6 py-12 sm:py-16 lg:flex-row lg:gap-16 lg:py-20">
+          <div className="flex flex-1 flex-col items-center text-center lg:items-start lg:text-left">
+            <span className="rounded-full bg-teal-100 px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-widest text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+              Status: Deep Freeze
+            </span>
 
-          <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-            Keep every memory.
-            <br />
-            Pay almost nothing to store it.
-          </h1>
+            <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
+              Your memories,
+              <br />
+              <span className="text-teal-600 dark:text-teal-400">preserved</span>
+              <br />
+              in ice.
+            </h1>
 
-          <p className="mt-6 max-w-xl text-lg text-black/60 dark:text-white/60">
-            Weddings, birthdays, trips - the moments you never want to lose but
-            rarely open. Reel Pouches keeps them safe for up to{" "}
-            <span className="font-semibold text-foreground">9× less</span> than
-            Google Drive.
-          </p>
+            <p className="mt-6 max-w-md text-lg leading-relaxed text-black/60 dark:text-white/60">
+              Cold Drive storage for the wedding reels, baby photos, festival
+              clips and trips you rarely open but never want to lose - up to{" "}
+              <span className="font-semibold text-foreground">9× cheaper</span>{" "}
+              than everyday cloud drives.
+            </p>
 
-          <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row">
-            <Cta {...ctaProps} label="Get started free" />
-            <Link
-              href="/pricing"
-              className="text-sm font-medium text-black/60 underline-offset-4 hover:underline dark:text-white/60"
-            >
-              See pricing →
-            </Link>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 lg:justify-start">
+              <Cta {...ctaProps} label="Start Your First Pouch" className={tealBtn} />
+              <div className="text-left">
+                <p className="text-[11px] font-medium uppercase tracking-widest text-black/40 dark:text-white/40">
+                  Current rate
+                </p>
+                <p className="text-base font-bold text-foreground">
+                  {coldRate} / GB · month
+                </p>
+              </div>
+            </div>
           </div>
 
-          <p className="mt-6 text-sm text-black/50 dark:text-white/50">
-            Cold Drive from{" "}
-            <span className="font-semibold text-foreground">
-              {money(cold.perMonth)}/TB per month
-            </span>
-          </p>
-        </div>
-
-        <div className="order-first w-full max-w-sm lg:order-none lg:max-w-none lg:flex-1">
-          <Image
-            src="/logo.png"
-            alt="Reel Pouches"
-            width={640}
-            height={640}
-            priority
-            className="h-auto w-full rounded-2xl object-contain"
-          />
+          <div className="relative w-full max-w-md lg:max-w-lg lg:flex-1">
+            <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-[2rem] bg-teal-200/60 dark:bg-teal-800/30" />
+            <div className="relative rounded-[2rem] bg-white p-3 shadow-2xl dark:bg-white/10">
+              <div className="overflow-hidden rounded-[1.5rem] bg-emerald-100 dark:bg-emerald-900/30">
+                <Image
+                  src="/logo.png"
+                  alt="Reel Pouches Cold Drive"
+                  width={640}
+                  height={640}
+                  priority
+                  className="h-auto w-full object-contain"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ---------- PROBLEM ---------- */}
-      <section className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-3xl px-6 py-10 text-center sm:py-12">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            We all keep paying to store photos we never open.
+      {/* ---------- COLD DRIVE TRADE-OFF ---------- */}
+      <section className="px-6 py-10 sm:py-14">
+        <div className="mx-auto max-w-6xl">
+          <div className="relative overflow-hidden rounded-[2rem] bg-neutral-900 p-8 text-white sm:p-12 dark:bg-black">
+            <span className="absolute right-6 top-6 font-mono text-[11px] uppercase tracking-widest text-teal-400/70">
+              Archive spec · v.03
+            </span>
+            <h2 className="max-w-xl text-3xl font-bold tracking-tight sm:text-4xl">
+              The Cold Drive trade-off
+            </h2>
+            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/60">
+              To offer storage this durable and inexpensive, we keep your data
+              physically frozen. This isn&apos;t for files you need every day.
+              When you want a pouch back, it takes{" "}
+              <span className="font-semibold text-white">12 to 24 hours</span> to
+              wake up - for a small retrieval fee.
+            </p>
+            <div className="mt-10 grid gap-8 sm:grid-cols-3">
+              <Step n="01" title="Request" body="Tap 'Wake Up' on any pouch in your vault." />
+              <Step n="02" title="Thaw" body="Our infrastructure prepares your files (12-24 h)." />
+              <Step n="03" title="Retrieve" body="Download for a short window, then it refreezes." />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- WHY NOT THE USUAL OPTIONS ---------- */}
+      <section className="px-6 py-10 sm:py-14">
+        <div className="mx-auto max-w-3xl">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Cheaper than the cloud. Safer than a drive.
+            </h2>
+            <p className="mt-3 text-black/50 dark:text-white/50">
+              For the photos and videos you back up but rarely open, the usual
+              options don&apos;t fit.
+            </p>
+          </div>
+          <div className="mt-10 space-y-4">
+            <CompareRow
+              label="Hard disks"
+              note="Cheap, but they fail, corrupt or get misplaced - one drop and years of memories are gone."
+            />
+            <CompareRow
+              label="Cloud drives"
+              note="Google Drive, iCloud, Amazon Photos are built for daily use - and overpriced for files you barely touch."
+            />
+            <CompareRow
+              label="Reel Pouches"
+              note="Purpose-built for rarely-opened backups: triple-redundant, safe, and a fraction of the cost."
+              highlight
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- MEMORY TYPES ---------- */}
+      <section className="px-6 py-10 sm:py-14">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <MemoryCard
+              letter="W"
+              title="Weddings"
+              body="Every RAW photo and 4K reel from the big day, safely vaulted."
+            />
+            <MemoryCard
+              letter="B"
+              title="Baby Years"
+              body="The thousands of clips you'll want to show them when they're 20."
+            />
+            <MemoryCard
+              letter="F"
+              title="Festivals"
+              body="The shaky concert footage and crowd photos that belong in your history."
+            />
+            <MemoryCard
+              letter="T"
+              title="Trips"
+              body="Six months of travel across a continent - every frame preserved."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- REDUNDANCY ---------- */}
+      <section className="px-6 py-10 text-center sm:py-14">
+        <div className="mx-auto max-w-2xl">
+          <div className="flex justify-center">
+            <span className="h-8 w-8 rounded-full bg-teal-600" />
+            <span className="-ml-3 h-8 w-8 rounded-full bg-teal-600/80" />
+            <span className="-ml-3 h-8 w-8 rounded-full bg-teal-600/60" />
+          </div>
+          <h2 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl">
+            Triple-redundant. Safe for your full term.
           </h2>
           <p className="mt-5 text-lg leading-relaxed text-black/60 dark:text-white/60">
-            Hard disks fail. Everyday cloud drives get more expensive every year
-            - and force you to buy space in big chunks. So we keep paying premium
-            prices to protect memories we look at maybe once a year. There should
-            be a cheaper way to simply <em>keep</em> them.
+            Your files are copied into deep cold storage with multiple redundant
+            copies on highly durable infrastructure - kept safe and intact for
+            the whole period you sign up for. Cheaper because it&apos;s frozen,
+            not because it&apos;s fragile.
           </p>
         </div>
       </section>
 
-      {/* ---------- THREE WAYS TO STORE ---------- */}
-      <section className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-6xl px-6 py-10 sm:py-12">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              Three ways to store - pick what each memory needs
-            </h2>
-          </div>
-
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            <StoreCard
-              icon={<ClockIcon />}
-              title="My Uploads"
-              price="Free"
-              priceNote=""
-              lines={[
-                "Upload instantly, share in seconds.",
-                "Auto-deletes after 15 days.",
-              ]}
-            />
-            <StoreCard
-              icon={<BoltIcon />}
-              title="Hot Drive"
-              price={money(hot.perMonth)}
-              priceNote="/TB per month"
-              highlight
-              lines={[
-                "Instant access, just like Google Drive.",
-                "Buy exactly what you need - from 50 GB.",
-              ]}
-            />
-            <StoreCard
-              icon={<SnowIcon />}
-              title="Cold Drive"
-              price={money(cold.perMonth)}
-              priceNote="/TB per month"
-              lines={[
-                "Up to 9× cheaper - for memories you rarely open.",
-                "Wake them up in 12-24 h when you need them.",
-              ]}
-            />
-          </div>
-
-          <div className="mt-8 text-center">
-            <Link
-              href="/pricing"
-              className="text-sm font-medium underline-offset-4 hover:underline"
-            >
-              See full pricing →
-            </Link>
+      {/* ---------- INFRASTRUCTURE ---------- */}
+      <section className="px-6 py-10 sm:py-14">
+        <div className="mx-auto max-w-5xl text-center">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-black/50 dark:text-white/50">
+            Built on infrastructure you already trust
+          </p>
+          <p className="mx-auto mt-4 max-w-2xl text-black/60 dark:text-white/60">
+            Your pouches are stored on enterprise-grade cold storage from the
+            same providers that power global banks, hospitals and studios.
+          </p>
+          <div className="mt-8 grid gap-6 sm:grid-cols-3">
+            <InfraCard name="AWS" sub="Glacier Deep Archive" icon={<AwsIcon />} />
+            <InfraCard name="Azure" sub="Blob Archive Tier" icon={<AzureIcon />} />
+            <InfraCard name="iDrive" sub="E2 Cold Storage" icon={<DriveIcon />} />
           </div>
         </div>
       </section>
 
-      {/* ---------- WHY REEL POUCHES ---------- */}
-      <section className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-6xl px-6 py-10 sm:py-12">
-          <div className="grid gap-8 sm:grid-cols-3">
-            <Value
-              title="Up to 9× cheaper"
-              body="Cold Drive costs a fraction of the everyday drives you already pay for."
-            />
-            <Value
-              title="Only pay for what you need"
-              body="Start from just 50 GB. No forced 200 GB or 1 TB plans you don't use yet."
-            />
-            <Value
-              title="Private, or shared"
-              body="Keep memories to yourself, or share them securely with family and clients."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- FOR STUDIOS ---------- */}
-      <section className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-5xl px-6 py-10 sm:py-12">
-          <div className="rounded-2xl border border-black/10 bg-background p-8 sm:p-10 dark:border-white/10">
-            <span className="text-xs font-semibold uppercase tracking-wide text-black/40 dark:text-white/40">
-              For photo &amp; video studios
+      {/* ---------- SECURITY ---------- */}
+      <section className="px-6 py-10 sm:py-14">
+        <div className="mx-auto max-w-6xl">
+          <div className="relative overflow-hidden rounded-[2rem] border border-black/5 bg-white p-8 shadow-sm sm:p-12 dark:border-white/10 dark:bg-white/5">
+            <span className="absolute right-6 top-6 font-mono text-[11px] uppercase tracking-widest text-black/30 dark:text-white/30">
+              Security · v.01
             </span>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Deliver galleries. Let clients keep them for years.
-            </h2>
-            <p className="mt-4 max-w-2xl text-lg text-black/60 dark:text-white/60">
-              Hand off finished shoots to your clients and let them archive their
-              own memories - without it eating into your storage or your costs.
-            </p>
-            <div className="mt-8">
-              <Cta {...ctaProps} label="Start delivering" />
+            <div className="grid items-center gap-10 lg:grid-cols-2">
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-widest text-teal-600 dark:text-teal-400">
+                  Built to protect
+                </p>
+                <h2 className="mt-4 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl">
+                  100% secure.
+                  <br />
+                  <span className="text-teal-600 dark:text-teal-400">
+                    Zero compromise.
+                  </span>
+                </h2>
+                <p className="mt-5 text-lg leading-relaxed text-black/60 dark:text-white/60">
+                  Your memories are encrypted, copied across multiple separate
+                  locations, and stored on the same enterprise-grade
+                  infrastructure trusted by banks and hospitals. They&apos;re
+                  never accessed or shared - and stay safe for the full period
+                  you sign up for.
+                </p>
+                <div className="mt-8 grid gap-6 sm:grid-cols-2">
+                  <SecurityFeature
+                    title="Encrypted at rest & in transit"
+                    body="Your files are protected every step of the way."
+                  />
+                  <SecurityFeature
+                    title="Triple-redundant vaults"
+                    body="Multiple copies across separate locations."
+                  />
+                  <SecurityFeature
+                    title="You're in control"
+                    body="Retrieve or remove your memories whenever you like."
+                  />
+                  <SecurityFeature
+                    title="Enterprise infrastructure"
+                    body="Built on AWS, Azure and iDrive cold storage."
+                  />
+                </div>
+              </div>
+
+              <div className="relative hidden h-[26rem] items-center justify-center lg:flex">
+                <div className="absolute h-96 w-96 rounded-full border border-teal-200/60 dark:border-teal-800/40" />
+                <div className="absolute h-72 w-72 rounded-full bg-teal-100/50 dark:bg-teal-900/20" />
+                <div className="absolute h-52 w-52 rounded-full bg-teal-100/70 dark:bg-teal-900/30" />
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-[1.75rem] bg-teal-600 text-white shadow-xl shadow-teal-600/20">
+                  <LockIcon />
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* ---------- FAQ ---------- */}
-      <section className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-3xl px-6 py-10 sm:py-12">
-          <Faq />
+      <section className="px-6 py-12 sm:py-16">
+        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_1.4fr]">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-widest text-teal-600 dark:text-teal-400">
+              FAQ
+            </p>
+            <h2 className="mt-4 text-4xl font-bold leading-tight tracking-tight">
+              What Cold Drive actually means.
+            </h2>
+            <p className="mt-4 text-black/60 dark:text-white/60">
+              The honest answers before you trust us with a decade of memories.
+            </p>
+          </div>
+          <FaqAccordion />
         </div>
       </section>
 
       {/* ---------- FINAL CTA ---------- */}
-      <section className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-3xl px-6 py-12 text-center">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+      <section className="px-6 pb-16">
+        <div className="mx-auto max-w-3xl rounded-[2rem] bg-teal-700 p-10 text-center text-white sm:p-14">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Start keeping your memories today.
           </h2>
-          <p className="mt-4 text-lg text-black/60 dark:text-white/60">
-            Free to try. Archive terabytes for the price of a coffee.
+          <p className="mt-4 text-white/70">
+            Free to try. Freeze terabytes for the price of a coffee.
           </p>
           <div className="mt-8 flex justify-center">
-            <Cta {...ctaProps} label="Get started free" />
+            <Cta
+              {...ctaProps}
+              label="Start Your First Pouch"
+              className="rounded-2xl bg-white px-7 py-4 text-sm font-semibold text-teal-700 hover:opacity-90"
+            />
           </div>
         </div>
       </section>
@@ -212,20 +303,23 @@ export default async function Home() {
   );
 }
 
-/* ---------- small building blocks ---------- */
+/* ---------- building blocks ---------- */
 
 function Cta({
   isSignedIn,
   role,
   homeHref,
   label,
+  className,
 }: {
   isSignedIn: boolean;
   role: Role | null;
   homeHref: string;
   label: string;
+  className?: string;
 }) {
   const cls =
+    className ??
     "rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background hover:opacity-90";
   if (isSignedIn) {
     return (
@@ -241,90 +335,154 @@ function Cta({
   );
 }
 
-function StoreCard({
-  icon,
-  title,
-  price,
-  priceNote,
-  lines,
-  highlight = false,
-}: {
-  icon: ReactNode;
-  title: string;
-  price: string;
-  priceNote: string;
-  lines: string[];
-  highlight?: boolean;
-}) {
+function Step({ n, title, body }: { n: string; title: string; body: string }) {
   return (
-    <section
-      className={`flex flex-col rounded-2xl border bg-background p-8 dark:border-white/10 ${
-        highlight ? "border-foreground/30" : "border-black/10"
-      }`}
-    >
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-black/5 text-foreground dark:bg-white/10">
-        {icon}
-      </div>
-      <h3 className="mt-5 text-lg font-semibold">{title}</h3>
-      <div className="mt-3 flex items-baseline gap-1.5">
-        <span className="text-3xl font-bold tracking-tight">{price}</span>
-        {priceNote && (
-          <span className="text-sm text-black/50 dark:text-white/50">
-            {priceNote}
-          </span>
-        )}
-      </div>
-      <ul className="mt-4 space-y-2">
-        {lines.map((l) => (
-          <li
-            key={l}
-            className="text-sm leading-relaxed text-black/60 dark:text-white/60"
-          >
-            {l}
-          </li>
-        ))}
-      </ul>
-    </section>
+    <div>
+      <div className="font-mono text-sm font-semibold text-teal-400">{n}</div>
+      <h3 className="mt-3 text-base font-semibold text-white">{title}</h3>
+      <p className="mt-1.5 text-sm leading-relaxed text-white/50">{body}</p>
+    </div>
   );
 }
 
-function Value({ title, body }: { title: string; body: string }) {
+function CompareRow({
+  label,
+  note,
+  highlight = false,
+}: {
+  label: string;
+  note: string;
+  highlight?: boolean;
+}) {
   return (
-    <div className="text-center sm:text-left">
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <p className="mt-2 text-base leading-relaxed text-black/60 dark:text-white/60">
+    <div className="flex items-center gap-3 sm:gap-4">
+      <div className="w-24 shrink-0 text-right font-mono text-[11px] uppercase tracking-widest text-black/40 dark:text-white/40 sm:w-28">
+        {label}
+      </div>
+      <div
+        className={`flex flex-1 items-center gap-2.5 rounded-2xl px-4 py-3 text-sm font-medium ${
+          highlight
+            ? "bg-teal-600 text-white"
+            : "bg-black/[0.05] text-black/70 dark:bg-white/10 dark:text-white/70"
+        }`}
+      >
+        <span className="shrink-0">
+          {highlight ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-black/30 dark:text-white/30">
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+          )}
+        </span>
+        <span>{note}</span>
+      </div>
+    </div>
+  );
+}
+
+function MemoryCard({
+  letter,
+  title,
+  body,
+}: {
+  letter: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-teal-100 text-base font-bold text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+        {letter}
+      </div>
+      <h3 className="mt-5 text-lg font-semibold">{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-black/60 dark:text-white/60">
         {body}
       </p>
     </div>
   );
 }
 
-/* ---------- icons ---------- */
-
-function ClockIcon() {
+function InfraCard({
+  name,
+  sub,
+  icon,
+}: {
+  name: string;
+  sub: string;
+  icon: ReactNode;
+}) {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <polyline points="12 7 12 12 15 14" />
+    <div className="flex flex-col items-center rounded-2xl border border-black/5 bg-white px-6 py-8 text-center shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+        {icon}
+      </div>
+      <div className="mt-4 text-2xl font-bold tracking-tight">{name}</div>
+      <div className="mt-2 font-mono text-[11px] uppercase tracking-widest text-black/40 dark:text-white/40">
+        {sub}
+      </div>
+    </div>
+  );
+}
+
+function SecurityFeature({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="flex gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+        <ShieldIcon />
+      </div>
+      <div>
+        <h3 className="text-sm font-semibold">{title}</h3>
+        <p className="mt-1 text-sm leading-relaxed text-black/55 dark:text-white/55">
+          {body}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3 5 6v5c0 4.5 3 7.6 7 9 4-1.4 7-4.5 7-9V6l-7-3Z" />
     </svg>
   );
 }
 
-function BoltIcon() {
+function LockIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
     </svg>
   );
 }
 
-function SnowIcon() {
+function AwsIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="2" x2="12" y2="22" />
-      <line x1="2" y1="12" x2="22" y2="12" />
-      <line x1="5" y1="5" x2="19" y2="19" />
-      <line x1="19" y1="5" x2="5" y2="19" />
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M6 15.5a3.5 3.5 0 0 1-.7-6.9 5 5 0 0 1 9.6-1.2A3.3 3.3 0 0 1 18 15.5H6Z" />
+      <path d="M4 19c5 1.8 11 1.8 16 0" />
+    </svg>
+  );
+}
+
+function AzureIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M9.6 3.5 4 20h4.2l1.4-4.4 4.1 3.7L6.9 20.5H20L13.5 3.5H9.6Z" />
+    </svg>
+  );
+}
+
+function DriveIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="6" width="18" height="12" rx="2" />
+      <circle cx="16.5" cy="12" r="1.3" fill="currentColor" stroke="none" />
     </svg>
   );
 }

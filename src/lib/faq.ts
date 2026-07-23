@@ -12,6 +12,10 @@ export const FAQ_ITEMS: { q: string; a: string }[] = [
   },
   {
     q: "What is Hot Drive?",
-    a: "Hot Drive works just like Google Drive, OneDrive or Amazon Photos - your files are available instantly and it costs about the same. The difference: on Reel Pouches you can buy exactly the space you need, starting from just 50 GB. Other platforms make you buy 200 GB to 1 TB upfront - space you don't need yet but pay for from day one.",
+    a: "Hot Drive works just like Google Drive, OneDrive or Amazon Photos - your files are available instantly and it costs about the same. The difference: on Reel Pouches you can buy exactly the space you need, starting from just 20 GB. Other platforms make you buy 200 GB to 1 TB upfront - space you don't need yet but pay for from day one.",
+  },
+  {
+    q: "What happens to my data after I store it in Cold Drive?",
+    a: "Your files are copied into deep, long-term cold storage and kept frozen - stored on highly durable infrastructure with multiple redundant copies, so they stay safe and intact for the whole period you sign up for. While they're frozen you can't open or download them instantly. When you need something back you request it (\"wake it up\"), it becomes downloadable in about 12-24 hours for a small retrieval fee, and then it refreezes. Your files stay safe for as long as your Cold Drive plan is active.",
   },
 ];

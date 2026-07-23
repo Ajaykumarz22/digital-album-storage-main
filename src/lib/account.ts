@@ -3,6 +3,7 @@ import mongoose, { type HydratedDocument } from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Account, AccountType } from "@/models/Account";
 import { FileModel } from "@/models/File";
+import { ArchiveModel } from "@/models/Archive";
 
 // The account-level record for the logged-in user, if any.
 export async function getMyAccount(): Promise<HydratedDocument<AccountType> | null> {
@@ -39,6 +40,23 @@ export async function getMyUsedBytes(): Promise<number> {
   const owner = await getMyOwner();
   if (!owner) return 0;
   return regularUsedBytes(owner.accountId);
+}
+
+// Cold Drive bytes an account is using — the sum of its live archives
+// (frozen or in-flight), counted against the purchased Cold Drive quota.
+export async function coldUsedBytes(accountId: string): Promise<number> {
+  await connectToDatabase();
+  const agg = await ArchiveModel.aggregate([
+    {
+      $match: {
+        ownerType: "customer",
+        ownerAccountId: new mongoose.Types.ObjectId(accountId),
+        status: { $ne: "deleted" },
+      },
+    },
+    { $group: { _id: null, total: { $sum: "$sizeBytes" } } },
+  ]);
+  return (agg[0]?.total as number) ?? 0;
 }
 
 // Regular-tier bytes used by a given account (for quota checks).

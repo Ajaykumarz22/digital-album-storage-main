@@ -8,6 +8,7 @@ import { Studio } from "@/models/Studio";
 import { getMyCustomerAccounts } from "@/lib/customer";
 import { getCurrentRole } from "@/lib/roles";
 import { getMyOwner, getMyAccount } from "@/lib/account";
+import { getCurrency } from "@/lib/geo";
 import { loadAllFolders, buildFolderPaths } from "@/lib/folders";
 import { daysLeft } from "@/lib/lifecycle";
 import SharedFileGroups, {
@@ -49,6 +50,7 @@ export default async function SharedSpacePage({
   const locked = account.status === "locked";
   const myAccount = await getMyAccount();
   const canImport = myAccount?.subscriptionStatus === "active";
+  const currency = await getCurrency();
 
   const scope = { customerId: studioSpace, ownerType: "studio" as const };
 
@@ -93,12 +95,7 @@ export default async function SharedSpacePage({
       size: f.size,
       createdAt: f.createdAt.toISOString(),
       folderPath: f.folderId ? pathById.get(String(f.folderId)) ?? "" : "",
-      deepTag:
-        f.deepStatus === "selected"
-          ? "selected"
-          : f.deepStatus === "moved"
-            ? "moved"
-            : null,
+      deepTag: f.deepStatus === "moved" ? "moved" : null,
     };
     const arr = byDays.get(days) ?? [];
     arr.push(row);
@@ -139,6 +136,7 @@ export default async function SharedSpacePage({
         studioSpace={studioSpace}
         canImport={canImport}
         locked={locked}
+        currency={currency}
       />
     </div>
   );

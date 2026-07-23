@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import BuyStorageModal from "@/components/portal/BuyStorageModal";
 
 type UploadItem = {
   name: string;
@@ -89,6 +90,7 @@ export default function FileManager({
   subtitle,
   moveAllRegularEndpoint,
   moveAllDeepEndpoint,
+  coldBuyCurrency,
 }: {
   currentFolderId: string | null;
   endpoints: UploadEndpoints;
@@ -98,7 +100,10 @@ export default function FileManager({
   // When set, the dropdown becomes an "Actions" menu with a "move ALL uploads"
   // item that POSTs here (auto-selects everything, no manual checkboxes).
   moveAllRegularEndpoint?: string;
+  // Cold Drive is prepaid: this endpoint archives everything if capacity fits,
+  // else returns 402 + requiredGb so we can pop the Buy Cold Drive modal.
   moveAllDeepEndpoint?: string;
+  coldBuyCurrency?: "USD" | "INR";
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,13 +113,14 @@ export default function FileManager({
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  // "Move all uploads" confirm modal + its in-flight flag.
-  const [confirm, setConfirm] = useState<
-    | { title: string; body: string; endpoint: string; label: string }
-    | null
-  >(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // When set, show the Buy modal prefilled with the capacity shortfall (GB) —
+  // after purchase we retry the matching move-all.
+  const [buyModal, setBuyModal] = useState<{
+    kind: "cold" | "hot";
+    gb: number;
+  } | null>(null);
   const hasBulkActions = Boolean(moveAllRegularEndpoint || moveAllDeepEndpoint);
 
   // Auto-dismiss the toast.
@@ -321,26 +327,31 @@ export default function FileManager({
     }
   }
 
-  // Run a "move ALL uploads" action (confirmed via the modal).
-  async function runMoveAll(endpoint: string, label: string) {
+  // Move-all into a prepaid drive: archive/move everything straight away if the
+  // purchased capacity fits; otherwise pop the Buy modal prefilled with the
+  // shortfall and retry after purchase. No confirmation step.
+  async function runMoveAll(kind: "cold" | "hot") {
+    const endpoint =
+      kind === "cold" ? moveAllDeepEndpoint : moveAllRegularEndpoint;
+    if (!endpoint) return;
+    const drive = kind === "cold" ? "Cold Drive" : "Hot drive";
     setActionBusy(true);
     const res = await fetch(endpoint, { method: "POST" });
     const j = await res.json().catch(() => ({}));
     setActionBusy(false);
-    setConfirm(null);
-    if (!res.ok) {
-      alert(j.error || `Could not move to ${label}.`);
+    if (res.status === 402 && j.requiredGb) {
+      setBuyModal({ kind, gb: j.requiredGb as number });
       return;
     }
-    if (!j.moved && !j.selected) {
+    if (!res.ok) {
+      alert(j.error || `Could not move to ${drive}.`);
+      return;
+    }
+    if (!j.moved) {
       alert("Nothing to move - upload some files first.");
       return;
     }
-    setToast(
-      label === "Cold Drive"
-        ? "Payment pending - review & pay on the Cold Drive tab."
-        : `Moved to ${label}.`
-    );
+    setToast(`Moved to ${drive}.`);
     router.refresh();
   }
 
@@ -350,11 +361,17 @@ export default function FileManager({
         type="button"
         aria-haspopup="menu"
         aria-expanded={menuOpen}
-        disabled={busy}
+        disabled={busy || actionBusy}
         onClick={() => setMenuOpen((v) => !v)}
         className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
       >
-        {busy ? "Uploading…" : hasBulkActions ? "Actions" : "Upload"}
+        {busy
+          ? "Uploading…"
+          : actionBusy
+            ? "Moving…"
+            : hasBulkActions
+              ? "Actions"
+              : "Upload"}
         <svg
           width="14"
           height="14"
@@ -419,16 +436,11 @@ export default function FileManager({
               role="menuitem"
               onClick={() => {
                 setMenuOpen(false);
-                setConfirm({
-                  title: "Move all uploads to Hot drive?",
-                  body: "Every file in My uploads will be moved into your paid Hot drive. This uses your purchased quota.",
-                  endpoint: moveAllRegularEndpoint,
-                  label: "Hot drive",
-                });
+                runMoveAll("hot");
               }}
               className="block w-full px-4 py-2.5 text-left text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10"
             >
-              Move to Hot drive
+              Move all to Hot drive
             </button>
           )}
           {moveAllDeepEndpoint && (
@@ -437,16 +449,11 @@ export default function FileManager({
               role="menuitem"
               onClick={() => {
                 setMenuOpen(false);
-                setConfirm({
-                  title: "Move all uploads to Cold Drive?",
-                  body: "Every file in My uploads will be selected for Cold Drive and moved to the payment step. You can review and pay on the Cold Drive tab. Nothing is charged yet.",
-                  endpoint: moveAllDeepEndpoint,
-                  label: "Cold Drive",
-                });
+                runMoveAll("cold");
               }}
               className="block w-full px-4 py-2.5 text-left text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10"
             >
-              Move to Cold Drive
+              Move all to Cold Drive
             </button>
           )}
         </div>
@@ -545,43 +552,6 @@ export default function FileManager({
         </ul>
       )}
 
-      {confirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => !actionBusy && setConfirm(null)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-lg border border-black/10 bg-background p-6 shadow-xl dark:border-white/10"
-          >
-            <h2 className="text-lg font-semibold">{confirm.title}</h2>
-            <p className="mt-2 text-sm text-black/70 dark:text-white/70">
-              {confirm.body}
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                disabled={actionBusy}
-                onClick={() => setConfirm(null)}
-                className="rounded-md border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:hover:bg-white/10"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={actionBusy}
-                onClick={() => runMoveAll(confirm.endpoint, confirm.label)}
-                className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
-              >
-                {actionBusy ? "Moving…" : "Proceed"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {toast && (
         <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
           <div
@@ -591,6 +561,34 @@ export default function FileManager({
             {toast}
           </div>
         </div>
+      )}
+
+      {buyModal && (
+        <BuyStorageModal
+          title={buyModal.kind === "cold" ? "Buy Cold Drive" : "Buy Hot drive"}
+          quoteEndpoint={
+            buyModal.kind === "cold"
+              ? "/api/portal/cold/quote"
+              : "/api/portal/regular/quote"
+          }
+          buyEndpoint={
+            buyModal.kind === "cold"
+              ? "/api/portal/cold/buy"
+              : "/api/portal/regular/buy"
+          }
+          currency={coldBuyCurrency ?? "USD"}
+          minGb={buyModal.kind === "cold" ? 50 : 20}
+          initialGb={buyModal.gb}
+          intro={`You need more ${
+            buyModal.kind === "cold" ? "Cold Drive" : "Hot drive"
+          } capacity to move these files. Buy the capacity below, then they'll move in automatically.`}
+          onClose={() => setBuyModal(null)}
+          onPurchased={() => {
+            const kind = buyModal.kind;
+            setBuyModal(null);
+            runMoveAll(kind);
+          }}
+        />
       )}
     </div>
   );
