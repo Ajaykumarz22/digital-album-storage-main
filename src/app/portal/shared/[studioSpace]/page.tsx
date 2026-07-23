@@ -52,7 +52,7 @@ export default async function SharedSpacePage({
 
   const scope = { customerId: studioSpace, ownerType: "studio" as const };
 
-  // Files the customer has already taken (moved to Regular or Deep) — hide them.
+  // Files the customer has already taken (moved to Regular or Deep) - hide them.
   const takenDocs = await FileModel.find({
     ownerType: "customer",
     ownerAccountId: owner.accountId,

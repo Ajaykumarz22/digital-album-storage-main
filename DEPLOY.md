@@ -6,11 +6,11 @@ external services.
 
 ## 0. Before you start
 - **Domain:** reelpouches.com (already purchased).
-- **Clerk production keys** (`pk_live_…` / `sk_live_…`) — already in your local
+- **Clerk production keys** (`pk_live_…` / `sk_live_…`) - already in your local
   `.env.local`, commented under "#clerk auth production". Create/confirm the
   Clerk **Production** instance for reelpouches.com and add the DNS records Clerk
   gives you (clerk.*, accounts.*, etc.).
-- **MongoDB, iDrive, AWS** — same values as local (reused as-is).
+- **MongoDB, iDrive, AWS** - same values as local (reused as-is).
 
 ## 1. Launch the EC2 instance
 - EC2 → Launch instance. **Ubuntu 24.04 LTS**, type **t3.small** (2 GB RAM) to
@@ -52,7 +52,7 @@ sudo npm install -g pm2
 ```bash
 git clone https://github.com/Ajaykumarz22/digital-album-storage-main.git app
 ```
-Your production env is the SAME as your local `.env.local`, so copy it up — run
+Your production env is the SAME as your local `.env.local`, so copy it up - run
 this **from your Mac** (not the server):
 ```bash
 scp -i your-key.pem .env.local ubuntu@<public IP>:~/app/.env.local
@@ -80,7 +80,7 @@ Check both are running: `pm2 status` (web + worker should be "online").
 sudo cp ~/app/Caddyfile /etc/caddy/Caddyfile   # already set to reelpouches.com
 sudo systemctl reload caddy
 ```
-Visit `https://reelpouches.com` — Caddy fetches a cert automatically.
+Visit `https://reelpouches.com` - Caddy fetches a cert automatically.
 
 ## 7. Wire the external services to production
 - **MongoDB Atlas** → Network Access → allow the EC2 public IP (or 0.0.0.0/0 for

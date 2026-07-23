@@ -105,7 +105,7 @@ export default async function StudioArchiveDetailPage({
                 >
                   <td className="px-4 py-3">{it.filename}</td>
                   <td className="px-4 py-3 text-black/60 dark:text-white/60">
-                    {it.path || "—"}
+                    {it.path || "-"}
                   </td>
                   <td className="px-4 py-3">{formatBytes(it.size)}</td>
                 </tr>

@@ -7,7 +7,7 @@ const StudioSchema = new Schema(
     clerkUserId: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true },
     name: { type: String, default: "" },
-    // $5/year plan status — wired up properly in the payments step.
+    // $5/year plan status - wired up properly in the payments step.
     planStatus: {
       type: String,
       enum: ["active", "inactive"],

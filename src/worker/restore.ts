@@ -44,7 +44,7 @@ export async function processRestore(job: Job<RestoreJob>): Promise<void> {
     return;
   }
 
-  console.log(`[restore] ${archiveId} still thawing — re-checking in 15m`);
+  console.log(`[restore] ${archiveId} still thawing - re-checking in 15m`);
   await requeue(archiveId);
 }
 

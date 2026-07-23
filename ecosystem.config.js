@@ -1,4 +1,4 @@
-// pm2 process config — runs BOTH the Next.js web server and the background
+// pm2 process config - runs BOTH the Next.js web server and the background
 // worker on the EC2 box, and keeps them alive (restart on crash + on reboot).
 //
 // On the server, from the app directory:

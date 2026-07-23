@@ -14,9 +14,9 @@ const MONTHS = [
 ];
 
 // Deterministic date (UTC) to avoid server/client hydration mismatches.
-// Accepts an ISO string or Date; returns "—" for empty values.
+// Accepts an ISO string or Date; returns "-" for empty values.
 export function formatDate(d: unknown): string {
-  if (!d) return "—";
+  if (!d) return "-";
   const x = new Date(d as string);
   return `${MONTHS[x.getUTCMonth()]} ${x.getUTCDate()}, ${x.getUTCFullYear()}`;
 }

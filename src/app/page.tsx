@@ -41,7 +41,7 @@ export default async function Home() {
           </h1>
 
           <p className="mt-6 max-w-xl text-lg text-black/60 dark:text-white/60">
-            Weddings, birthdays, trips — the moments you never want to lose but
+            Weddings, birthdays, trips - the moments you never want to lose but
             rarely open. Reel Pouches keeps them safe for up to{" "}
             <span className="font-semibold text-foreground">9× less</span> than
             Google Drive.
@@ -85,7 +85,7 @@ export default async function Home() {
           </h2>
           <p className="mt-5 text-lg leading-relaxed text-black/60 dark:text-white/60">
             Hard disks fail. Everyday cloud drives get more expensive every year
-            — and force you to buy space in big chunks. So we keep paying premium
+            - and force you to buy space in big chunks. So we keep paying premium
             prices to protect memories we look at maybe once a year. There should
             be a cheaper way to simply <em>keep</em> them.
           </p>
@@ -97,7 +97,7 @@ export default async function Home() {
         <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              Three ways to store — pick what each memory needs
+              Three ways to store - pick what each memory needs
             </h2>
           </div>
 
@@ -120,7 +120,7 @@ export default async function Home() {
               highlight
               lines={[
                 "Instant access, just like Google Drive.",
-                "Buy exactly what you need — from 50 GB.",
+                "Buy exactly what you need - from 50 GB.",
               ]}
             />
             <StoreCard
@@ -129,8 +129,8 @@ export default async function Home() {
               price={money(cold.perMonth)}
               priceNote="/TB per month"
               lines={[
-                "Up to 9× cheaper — for memories you rarely open.",
-                "Wake them up in 12–24 h when you need them.",
+                "Up to 9× cheaper - for memories you rarely open.",
+                "Wake them up in 12-24 h when you need them.",
               ]}
             />
           </div>
@@ -178,7 +178,7 @@ export default async function Home() {
             </h2>
             <p className="mt-4 max-w-2xl text-lg text-black/60 dark:text-white/60">
               Hand off finished shoots to your clients and let them archive their
-              own memories — without it eating into your storage or your costs.
+              own memories - without it eating into your storage or your costs.
             </p>
             <div className="mt-8">
               <Cta {...ctaProps} label="Start delivering" />

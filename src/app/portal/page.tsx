@@ -94,7 +94,7 @@ export default async function PortalPage() {
         moveAllDeepEndpoint="/api/portal/deep-cart/add-all"
       />
 
-      {/* Temporary Storage — your own uploads + studio deliveries */}
+      {/* Temporary Storage - your own uploads + studio deliveries */}
       <section>
         <div>
           <FileBrowser
@@ -342,7 +342,7 @@ async function loadSharedRows(
   if (accounts.length === 0) return [];
   await connectToDatabase();
 
-  // Files this customer already moved (to Regular/Deep) — exclude from counts.
+  // Files this customer already moved (to Regular/Deep) - exclude from counts.
   const takenDocs = await FileModel.find({
     ownerType: "customer",
     ownerAccountId: myAccountId,
@@ -359,7 +359,7 @@ async function loadSharedRows(
         customerId: { $in: ids },
         ownerType: "studio",
         status: "ready",
-        // Files tagged for Cold Drive are hidden here — they show in the
+        // Files tagged for Cold Drive are hidden here - they show in the
         // Payment Pending list instead (same as the customer's own uploads).
         deepStatus: "none",
         ...(takenIds.length ? { _id: { $nin: takenIds } } : {}),

@@ -5,7 +5,7 @@ import { ArchiveModel, ArchiveType } from "@/models/Archive";
 import { Account } from "@/models/Account";
 import { Studio } from "@/models/Studio";
 
-// Return the archive ONLY if the logged-in user owns it — a customer via their
+// Return the archive ONLY if the logged-in user owns it - a customer via their
 // stable Account id, or a studio via its studio id. Otherwise null. Used by the
 // restore + download routes so both owner types share one authorization path.
 export async function authorizeArchive(

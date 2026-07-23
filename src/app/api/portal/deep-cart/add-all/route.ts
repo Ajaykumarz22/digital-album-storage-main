@@ -5,7 +5,7 @@ import { getMyOwner } from "@/lib/account";
 import { getMyCustomerAccounts } from "@/lib/customer";
 import { FileModel } from "@/models/File";
 
-// "Move ALL my uploads to Cold Drive" — one click, no manual selection. Tags
+// "Move ALL my uploads to Cold Drive" - one click, no manual selection. Tags
 // everything shown in My Uploads "selected for cold drive" so it enters the
 // Payment Pending list: the customer's own Temporary-tier files AND the studio
 // deliveries shared with them (same mechanism as the per-selection button).

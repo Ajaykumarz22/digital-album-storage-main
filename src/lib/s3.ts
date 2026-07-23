@@ -42,7 +42,7 @@ export function buildObjectKey(
 }
 
 // A customer's own private drive lives under its own namespace, keyed by the
-// stable internal Account id (NOT email — so the key never depends on a value
+// stable internal Account id (NOT email - so the key never depends on a value
 // that can change). The key is stored on the File record and always reused.
 export function buildUserObjectKey(
   ownerId: string,

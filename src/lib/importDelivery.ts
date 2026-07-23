@@ -109,7 +109,7 @@ export async function importDelivery(opts: {
       });
       map.set(f.id, String(created._id));
     }
-    if (next.length === remaining.length) break; // no progress — stop
+    if (next.length === remaining.length) break; // no progress - stop
     remaining = next;
   }
 

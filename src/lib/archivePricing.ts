@@ -3,7 +3,7 @@ import type { Currency } from "@/lib/plans";
 // ---- Archive pricing config (edit these freely) ----------------------------
 //
 // Customer rate = (AWS Deep Archive base rate + markup) per TB per month,
-// charged upfront for the chosen term. Storage only — RESTORE is billed
+// charged upfront for the chosen term. Storage only - RESTORE is billed
 // separately when a customer actually pulls data back.
 //
 // NOTE: verify the exact AWS ap-south-1 (Mumbai) Deep Archive rate and update
@@ -91,7 +91,7 @@ export function deepArchivePricePerTBMonth(currency: Currency): string {
 }
 
 // Cold Drive price per TB, as raw numbers (month + year total) in the chosen
-// currency — for the pricing page.
+// currency - for the pricing page.
 export function deepPerTB(currency: Currency): { perMonth: number; perYear: number } {
   const usd = AWS_DEEP_ARCHIVE_USD_PER_TB_MONTH + MARKUP_USD_PER_TB_MONTH;
   const perMonth = currency === "INR" ? usd * USD_TO_INR : usd;

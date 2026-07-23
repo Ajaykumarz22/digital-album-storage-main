@@ -70,7 +70,7 @@ async function PersonalDetails({ regularBytes }: { regularBytes: number }) {
       </Link>
 
       <p className="text-sm text-black/50 dark:text-white/50">
-        Uploading is free — files land in Temporary storage (auto-delete after
+        Uploading is free - files land in Temporary storage (auto-delete after
         15 days). Buy Hot drive from your storage page to keep files
         permanently.
       </p>
@@ -100,13 +100,13 @@ function BusinessDetails({
           <span className="text-sm text-black/50 dark:text-white/50">
             Business name
           </span>
-          <span className="font-medium">{businessName || "—"}</span>
+          <span className="font-medium">{businessName || "-"}</span>
         </div>
         <div className="mt-3 flex items-center justify-between">
           <span className="text-sm text-black/50 dark:text-white/50">
             Avg. customers / month
           </span>
-          <span className="font-medium">{avgCustomers || "—"}</span>
+          <span className="font-medium">{avgCustomers || "-"}</span>
         </div>
         <div className="mt-3 flex items-center justify-between">
           <span className="text-sm text-black/50 dark:text-white/50">

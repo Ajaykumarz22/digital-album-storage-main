@@ -139,7 +139,7 @@ export default function FileBrowser({
     if (res.ok) {
       if (!ov) clearSelection();
       alert(
-        "Tagged for Cold Drive. They stay here, marked “Selected for cold drive”, and appear in your Payment Pending list — pay there to freeze them."
+        "Tagged for Cold Drive. They stay here, marked “Selected for cold drive”, and appear in your Payment Pending list - pay there to freeze them."
       );
       router.refresh();
     } else {
@@ -213,7 +213,7 @@ export default function FileBrowser({
     setRowMenu(null);
     if (res.ok) {
       alert(
-        "All files tagged “Selected for cold drive” — pay in your Payment Pending list to freeze them."
+        "All files tagged “Selected for cold drive” - pay in your Payment Pending list to freeze them."
       );
       router.refresh();
     } else {
@@ -586,7 +586,7 @@ export default function FileBrowser({
                 {fld.name}
               </Link>
               <div className="mt-0.5 truncate text-xs text-black/50 dark:text-white/50">
-                {fld.sizeBytes ? formatBytes(fld.sizeBytes) : "—"} ·{" "}
+                {fld.sizeBytes ? formatBytes(fld.sizeBytes) : "-"} ·{" "}
                 {formatDate(fld.createdAt)}
               </div>
             </div>
@@ -788,7 +788,7 @@ export default function FileBrowser({
         </>
       )}
 
-      {/* Move to Cold Drive — shared modal (studio direct archive) */}
+      {/* Move to Cold Drive - shared modal (studio direct archive) */}
       {archiveOpen && canArchive && (
         <DeepArchiveModal
           quoteUrl={endpoints.archiveQuote as string}

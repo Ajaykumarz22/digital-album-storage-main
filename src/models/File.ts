@@ -24,7 +24,7 @@ const FileSchema = new Schema(
       default: "studio",
       index: true,
     },
-    // Owner's email (lowercased) — a mutable DISPLAY hint, not identity.
+    // Owner's email (lowercased) - a mutable DISPLAY hint, not identity.
     ownerEmail: { type: String, default: "", index: true },
     // Stable internal owner = Account._id. Provider-agnostic identity that
     // survives email changes and even swapping out the auth provider. This is
@@ -54,7 +54,7 @@ const FileSchema = new Schema(
       default: "pending",
     },
     // Cold Drive tag (applies to a customer's own files AND to studio-shared
-    // files the customer has tagged — studio files are per-delivery so the tag
+    // files the customer has tagged - studio files are per-delivery so the tag
     // is unambiguous):
     //   "none"      = not selected.
     //   "selected"  = tagged "Selected for cold drive", waiting for payment.
@@ -70,7 +70,7 @@ const FileSchema = new Schema(
       index: true,
     },
     // If this customer file was COPIED from a studio-shared file, the source
-    // file's id — lets the shared view hide files the customer already took.
+    // file's id - lets the shared view hide files the customer already took.
     sourceFileId: {
       type: Schema.Types.ObjectId,
       ref: "File",

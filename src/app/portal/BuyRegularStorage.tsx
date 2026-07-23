@@ -85,7 +85,7 @@ export default function BuyRegularStorage({
           <div className="w-full max-w-md rounded-xl border border-black/10 bg-background p-6 shadow-xl dark:border-white/15">
             <h3 className="text-lg font-semibold">Buy Hot drive</h3>
             <p className="mt-1 text-sm text-black/60 dark:text-white/60">
-              Billed yearly. Minimum {MIN_GB} GB — enter any amount from there.
+              Billed yearly. Minimum {MIN_GB} GB - enter any amount from there.
               Adds to your existing quota.
             </p>
 
@@ -117,7 +117,7 @@ export default function BuyRegularStorage({
                   </span>
                 </div>
                 <div className="mt-1 text-xs text-black/50 dark:text-white/50">
-                  Billed yearly — {money(quote.yearlyUsd, quote.yearlyInr)}/year
+                  Billed yearly - {money(quote.yearlyUsd, quote.yearlyInr)}/year
                 </div>
               </div>
             )}

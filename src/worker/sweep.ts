@@ -72,5 +72,5 @@ export async function processSweep(): Promise<void> {
     )
   );
 
-  console.log(`[sweep] done — ${expired.length} file(s) removed`);
+  console.log(`[sweep] done - ${expired.length} file(s) removed`);
 }

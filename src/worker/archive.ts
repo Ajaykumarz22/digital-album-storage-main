@@ -43,12 +43,12 @@ export async function processArchive(job: Job<ArchiveJob>): Promise<void> {
   const { archiveId } = job.data;
   const archive = await ArchiveModel.findById(archiveId);
   if (!archive) {
-    console.warn(`[archive] ${archiveId} not found — skipping`);
+    console.warn(`[archive] ${archiveId} not found - skipping`);
     return;
   }
   // Only process a paid archive; guards against double-runs / bad state.
   if (archive.status !== "paid") {
-    console.warn(`[archive] ${archiveId} status=${archive.status} — skipping`);
+    console.warn(`[archive] ${archiveId} status=${archive.status} - skipping`);
     return;
   }
 
@@ -128,7 +128,7 @@ export async function processArchive(job: Job<ArchiveJob>): Promise<void> {
   archive.expiresAt = addYears(new Date(), archive.termYears);
   archive.error = "";
   await archive.save();
-  console.log(`[archive] ${archiveId} DONE — ${items.length} files frozen.`);
+  console.log(`[archive] ${archiveId} DONE - ${items.length} files frozen.`);
 }
 
 // Stream each file out of iDrive, zip on the fly (store = no compression, since

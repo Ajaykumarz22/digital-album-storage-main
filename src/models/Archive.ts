@@ -13,7 +13,7 @@ const ArchiveSchema = new Schema(
       required: true,
       index: true,
     },
-    // Mutable DISPLAY hint — not identity.
+    // Mutable DISPLAY hint - not identity.
     ownerEmail: { type: String, required: true, index: true },
     // Stable internal owner = Account._id (provider-agnostic). Authoritative.
     ownerAccountId: {

@@ -1,6 +1,6 @@
 import mongoose, { Schema, InferSchemaType, Model, Types } from "mongoose";
 
-// One file INSIDE an archived .zip. This is the "manifest" — it lets us show
+// One file INSIDE an archived .zip. This is the "manifest" - it lets us show
 // the full contents of a frozen bundle (names, sizes, folder paths, thumbnails)
 // instantly, without paying to restore the underlying Deep Archive object.
 const ArchiveItemSchema = new Schema(

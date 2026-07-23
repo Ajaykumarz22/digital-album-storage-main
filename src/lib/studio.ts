@@ -10,7 +10,7 @@ export async function getOrCreateCurrentStudio(): Promise<HydratedDocument<Studi
   const user = await currentUser();
   if (!user) return null;
 
-  // Only business accounts have a studio record — never create one for a
+  // Only business accounts have a studio record - never create one for a
   // customer account.
   if (user.publicMetadata?.role !== "business") return null;
 
@@ -31,7 +31,7 @@ export async function getOrCreateCurrentStudio(): Promise<HydratedDocument<Studi
 }
 
 // Fetch a customer ONLY if it belongs to the currently logged-in studio.
-// Returns null otherwise — this is how we stop one studio from accessing
+// Returns null otherwise - this is how we stop one studio from accessing
 // another studio's customers or files.
 export async function getOwnedCustomer(
   customerId: string

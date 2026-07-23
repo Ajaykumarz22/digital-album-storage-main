@@ -33,7 +33,7 @@ export async function GET(
   const email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
 
   if (file.ownerType === "customer") {
-    // A customer's own private file — only the owner may download it, matched
+    // A customer's own private file - only the owner may download it, matched
     // by the stable Account id (not email).
     const account = await Account.findOne({ clerkUserId: user.id })
       .select("_id")
@@ -46,7 +46,7 @@ export async function GET(
       return NextResponse.json({ error: "Not allowed." }, { status: 403 });
     }
   } else {
-    // A studio delivery — the receiving customer, or the owning studio.
+    // A studio delivery - the receiving customer, or the owning studio.
     const customer = await Customer.findById(file.customerId);
     if (!customer) {
       return NextResponse.json({ error: "Not found." }, { status: 404 });

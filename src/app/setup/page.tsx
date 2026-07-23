@@ -84,7 +84,7 @@ function FaqRead() {
   );
 }
 
-// Shown to users who have already finished setup — every login lands here.
+// Shown to users who have already finished setup - every login lands here.
 function WelcomeCard({ homeHref }: { homeHref: string }) {
   return (
     <div className={cardClass}>
@@ -116,7 +116,7 @@ function ChooseType() {
             studio.
           </p>
           <button className="mt-6 rounded-md bg-foreground px-5 py-3 text-base font-medium text-background hover:opacity-90">
-            Continue — Personal
+            Continue - Personal
           </button>
         </form>
 
@@ -129,7 +129,7 @@ function ChooseType() {
             A photo/video studio sharing galleries with your clients.
           </p>
           <button className="mt-6 rounded-md border border-black/15 px-5 py-3 text-base font-medium hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10">
-            Continue — Business
+            Continue - Business
           </button>
         </form>
       </div>

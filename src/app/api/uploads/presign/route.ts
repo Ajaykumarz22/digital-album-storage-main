@@ -9,7 +9,7 @@ import { getOwnedCustomer } from "@/lib/studio";
 import { resolveFolder } from "@/lib/folders";
 import { FileModel } from "@/models/File";
 
-// Largest single-request upload we allow (5 GB — the S3 single-PUT limit).
+// Largest single-request upload we allow (5 GB - the S3 single-PUT limit).
 const MAX_SIZE = 5 * 1024 * 1024 * 1024;
 
 export async function POST(req: Request) {
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid folder." }, { status: 400 });
   }
 
-  // This upload is a studio delivery — owned by the studio (the logged-in user).
+  // This upload is a studio delivery - owned by the studio (the logged-in user).
   const actingUser = await currentUser();
   const ownerEmail =
     actingUser?.primaryEmailAddress?.emailAddress?.toLowerCase() ?? "";

@@ -15,7 +15,7 @@ function statusLabel(status: string, trialEndsAt: Date): string {
   const daysLeft = Math.ceil(
     (new Date(trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)
   );
-  return daysLeft > 0 ? `Trial — ${daysLeft} days left` : "Trial ended";
+  return daysLeft > 0 ? `Trial - ${daysLeft} days left` : "Trial ended";
 }
 
 export default async function DashboardPage() {
@@ -81,7 +81,7 @@ export default async function DashboardPage() {
                         className="block"
                       >
                         <div className="font-medium hover:underline">
-                          {c.name || "—"}
+                          {c.name || "-"}
                         </div>
                         <div className="text-black/50 dark:text-white/50">
                           {c.email}

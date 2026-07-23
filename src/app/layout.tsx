@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Reel Pouches — secure photo & video delivery for studios",
+  title: "Reel Pouches - secure photo & video delivery for studios",
   description:
     "Photo studios share photos and videos securely with their customers.",
 };

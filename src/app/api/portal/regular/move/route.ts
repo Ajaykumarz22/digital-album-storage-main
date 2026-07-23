@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     const shortBy = used + incoming - capacity;
     return NextResponse.json(
       {
-        error: `Not enough Hot drive — you need ${humanBytes(
+        error: `Not enough Hot drive - you need ${humanBytes(
           shortBy
         )} more. Buy more storage first.`,
         needMore: true,

@@ -52,7 +52,7 @@ export default async function CustomerPage({
   const currentFolderId = resolved.ok ? resolved.folderId : null;
 
   await connectToDatabase();
-  // Studio only ever sees its OWN uploads — never the customer's private files.
+  // Studio only ever sees its OWN uploads - never the customer's private files.
   const [folders, files, breadcrumb, allFolders] = await Promise.all([
     Folder.find({
       customerId: customer._id,
@@ -147,7 +147,7 @@ export default async function CustomerPage({
                 </div>
 
                 <section>
-                  {/* Breadcrumb — only when inside a folder */}
+                  {/* Breadcrumb - only when inside a folder */}
                   {breadcrumb.length > 0 && (
                     <nav className="mb-3 mt-3 flex flex-wrap items-center gap-1 text-sm">
                       <Link href={base} className="hover:underline">

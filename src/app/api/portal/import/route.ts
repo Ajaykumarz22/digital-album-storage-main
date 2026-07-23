@@ -12,7 +12,7 @@ import { FileModel } from "@/models/File";
 import { Folder } from "@/models/Folder";
 
 // Copy an entire studio delivery (a "Shared with me" space) into the customer's
-// own My Drive, under a new folder — so they permanently own a copy.
+// own My Drive, under a new folder - so they permanently own a copy.
 export async function POST(req: Request) {
   const email = await getMyEmail();
   if (!email) {
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
       });
       map.set(f.id, String(created._id));
     }
-    if (next.length === remaining.length) break; // no progress — stop
+    if (next.length === remaining.length) break; // no progress - stop
     remaining = next;
   }
 
@@ -113,13 +113,13 @@ export async function POST(req: Request) {
     }[]
   >();
 
-  // Quota check — the whole delivery lands in the paid Regular tier.
+  // Quota check - the whole delivery lands in the paid Regular tier.
   const incoming = files.reduce((s, f) => s + (f.size || 0), 0);
   const used = await regularUsedBytes(accountId);
   if (used + incoming > (account.regularBytes ?? 0)) {
     return NextResponse.json(
       {
-        error: `Not enough Hot drive — need ${humanBytes(
+        error: `Not enough Hot drive - need ${humanBytes(
           used + incoming - (account.regularBytes ?? 0)
         )} more. Buy more storage first.`,
         needMore: true,

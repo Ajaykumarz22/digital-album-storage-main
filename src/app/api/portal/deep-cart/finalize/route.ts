@@ -53,7 +53,7 @@ export async function POST(req: Request) {
       {
         error: `Cold Drive needs at least ${humanBytes(
           MIN_ARCHIVE_BYTES
-        )} total. Selected: ${humanBytes(sizeBytes)} — select more before paying.`,
+        )} total. Selected: ${humanBytes(sizeBytes)} - select more before paying.`,
       },
       { status: 400 }
     );

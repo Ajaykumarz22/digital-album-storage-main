@@ -38,7 +38,7 @@ export default function RestoreControls({
     setBusy(false);
     if (res.ok) {
       alert(
-        "Restore started (payment mocked). This takes up to 48 hours — the status will update to “Ready to download” when it's done."
+        "Restore started (payment mocked). This takes up to 48 hours - the status will update to “Ready to download” when it's done."
       );
       router.refresh();
     } else {
@@ -51,7 +51,7 @@ export default function RestoreControls({
     return (
       <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-sm">
         <span className="font-medium">Restoring…</span> This can take up to 48
-        hours. Check back — the status will change to “Ready to download” when
+        hours. Check back - the status will change to “Ready to download” when
         the files are ready.
       </div>
     );

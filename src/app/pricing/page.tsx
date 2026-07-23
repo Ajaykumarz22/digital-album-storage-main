@@ -24,7 +24,7 @@ export default async function PricingPage() {
       </p>
 
       <div className="mt-10 grid gap-6 md:grid-cols-3">
-        {/* My Uploads — free, temporary */}
+        {/* My Uploads - free, temporary */}
         <section className="rounded-2xl border border-black/10 p-8 dark:border-white/10">
           <h2 className="text-xl font-semibold">My Uploads</h2>
           <div className="mt-8 text-5xl font-bold tracking-tight">Free</div>
@@ -33,10 +33,10 @@ export default async function PricingPage() {
           </p>
         </section>
 
-        {/* Hot storage — regular */}
+        {/* Hot storage - regular */}
         <PriceCard title="Hot storage" perMonth={money(hot.perMonth)} perYear={money(hot.perYear)} />
 
-        {/* Cold storage — deep archive */}
+        {/* Cold storage - deep archive */}
         <PriceCard title="Cold storage" perMonth={money(cold.perMonth)} perYear={money(cold.perYear)} />
       </div>
 

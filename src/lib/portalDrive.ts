@@ -29,7 +29,7 @@ export async function loadTier(
   const currentFolderId = resolved.ok ? resolved.folderId : null;
   const folderValid = resolved.ok;
 
-  // Temporary (My Uploads) hides anything tagged for Cold Drive — those files
+  // Temporary (My Uploads) hides anything tagged for Cold Drive - those files
   // live in the Payment Pending list now. Other tiers still show them (badged).
   const fileVisibility =
     tier === "temporary"
@@ -99,7 +99,7 @@ export async function loadTier(
     sizeBytes: rollup(String(f._id), "bytes"),
   }));
   // Hide folders whose files are all in Cold Drive's Payment Pending list
-  // (nothing visible remains) — but keep genuinely empty folders.
+  // (nothing visible remains) - but keep genuinely empty folders.
   if (tier === "temporary") {
     folderRows = folderRows.filter(
       (f) => !(rollup(f.id, "total") > 0 && rollup(f.id, "visible") === 0)

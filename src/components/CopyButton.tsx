@@ -17,7 +17,7 @@ export default function CopyButton({
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Clipboard blocked — no-op; the text is visible to copy manually.
+      // Clipboard blocked - no-op; the text is visible to copy manually.
     }
   }
 

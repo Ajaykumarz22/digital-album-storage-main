@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   const folderIdArray = [...folderSet];
 
   // Files to remove = explicitly selected files + all files inside those folders
-  // (studio-owned only — a studio can never delete a customer's private files).
+  // (studio-owned only - a studio can never delete a customer's private files).
   const files = await FileModel.find({
     customerId: customer._id,
     ownerType: "studio",

@@ -1,5 +1,5 @@
 // A small "ⓘ" icon that reveals help text on hover or keyboard focus. Pure CSS
-// (no client JS) — safe to use inside server components. Sits next to a title.
+// (no client JS) - safe to use inside server components. Sits next to a title.
 export default function InfoHint({ text }: { text: string }) {
   return (
     <span className="group relative inline-flex align-middle">

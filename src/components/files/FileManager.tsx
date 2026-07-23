@@ -333,12 +333,12 @@ export default function FileManager({
       return;
     }
     if (!j.moved && !j.selected) {
-      alert("Nothing to move — upload some files first.");
+      alert("Nothing to move - upload some files first.");
       return;
     }
     setToast(
       label === "Cold Drive"
-        ? "Payment pending — review & pay on the Cold Drive tab."
+        ? "Payment pending - review & pay on the Cold Drive tab."
         : `Moved to ${label}.`
     );
     router.refresh();

@@ -51,7 +51,7 @@ export function regularYearlyPrice(q: RegularQuote, currency: Currency): number 
 }
 
 // Hot storage price per TB, as raw numbers (month + year total) in the chosen
-// currency — for the pricing page.
+// currency - for the pricing page.
 export function regularPerTB(currency: Currency): { perMonth: number; perYear: number } {
   const q = quoteRegular(1024);
   return currency === "INR"

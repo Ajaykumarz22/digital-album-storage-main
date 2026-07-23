@@ -71,7 +71,7 @@ export async function POST(req: Request) {
   const bucketKey = buildArchiveKey(owner.accountId, String(archiveId));
 
   // TODO(Phase 9): replace this instant "paid" with a real Razorpay charge.
-  // For now the payment is mocked — we mark it paid immediately.
+  // For now the payment is mocked - we mark it paid immediately.
   await ArchiveModel.create({
     _id: archiveId,
     ownerType: "customer",

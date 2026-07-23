@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Shared "freeze to Cold Drive" modal — used by the studio side (direct
+// Shared "freeze to Cold Drive" modal - used by the studio side (direct
 // archive of selected files) AND the customer Payment Pending list. Only the
 // quote/finalize endpoints + extra body differ. Parent mounts it when open.
 export default function DeepArchiveModal({
@@ -109,7 +109,7 @@ export default function DeepArchiveModal({
         />
 
         <label className="mt-4 block text-sm font-medium">
-          Keep for (years) — min 7, max 100
+          Keep for (years) - min 7, max 100
         </label>
         <input
           type="number"

@@ -1,7 +1,7 @@
 import mongoose, { Schema, InferSchemaType, Model, Types } from "mongoose";
 
 // One per logged-in user (by Clerk id). Holds account-level setup + subscription
-// state chosen on the Setup page — separate from per-studio delivery records.
+// state chosen on the Setup page - separate from per-studio delivery records.
 const AccountSchema = new Schema(
   {
     clerkUserId: { type: String, required: true, unique: true, index: true },
@@ -15,7 +15,7 @@ const AccountSchema = new Schema(
       default: "pending",
     },
 
-    // Personal accounts (the 15-day trial is NOT here — it lives on the
+    // Personal accounts (the 15-day trial is NOT here - it lives on the
     // per-studio Customer record for the shared/delivered data only):
     planId: { type: String, default: null },
     planBytes: { type: Number, default: 0 },

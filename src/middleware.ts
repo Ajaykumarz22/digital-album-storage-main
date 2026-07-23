@@ -3,7 +3,7 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
 // clerkMiddleware sets up the auth context for every request so that
 // `auth()` works in pages, layouts, and API routes.
 // Actual "is the user allowed here?" checks live inside each protected
-// page/route (see src/app/dashboard/page.tsx) — the current Clerk-recommended
+// page/route (see src/app/dashboard/page.tsx) - the current Clerk-recommended
 // pattern.
 export default clerkMiddleware();
 

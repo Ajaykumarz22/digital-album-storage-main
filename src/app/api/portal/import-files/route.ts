@@ -9,7 +9,7 @@ import { getMyCustomerAccounts } from "@/lib/customer";
 import { humanBytes } from "@/lib/archivePricing";
 import { FileModel } from "@/models/File";
 
-// "Move to Hot drive" from a studio-shared space — copies the selected
+// "Move to Hot drive" from a studio-shared space - copies the selected
 // shared files into the customer's Regular tier. Needs enough purchased quota.
 export async function POST(req: Request) {
   const owner = await getMyOwner();
@@ -53,13 +53,13 @@ export async function POST(req: Request) {
       }[]
     >();
 
-  // Quota check — these copies land in the paid Regular tier.
+  // Quota check - these copies land in the paid Regular tier.
   const incoming = files.reduce((s, f) => s + (f.size || 0), 0);
   const used = await regularUsedBytes(owner.accountId);
   if (used + incoming > (account.regularBytes ?? 0)) {
     return NextResponse.json(
       {
-        error: `Not enough Hot drive — need ${humanBytes(
+        error: `Not enough Hot drive - need ${humanBytes(
           used + incoming - (account.regularBytes ?? 0)
         )} more. Buy more storage first.`,
         needMore: true,
