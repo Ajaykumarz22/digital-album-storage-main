@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { connectToDatabase } from "@/lib/mongodb";
@@ -11,6 +10,7 @@ import { getCurrentRole } from "@/lib/roles";
 import { getMyAccount, getMyOwner } from "@/lib/account";
 import BuyRegularStorage from "./BuyRegularStorage";
 import BuyColdDrive from "@/components/portal/BuyColdDrive";
+import AddFilesButton from "@/components/portal/AddFilesButton";
 import { getCurrency } from "@/lib/geo";
 import ArchiveList, { type ArchiveRow } from "@/components/archives/ArchiveList";
 import { loadTier } from "@/lib/portalDrive";
@@ -121,24 +121,11 @@ export default async function PortalPage() {
         browseBase="/portal/archive"
         emptyHint="No files in Cold Drive yet."
         emptyAction={
-          <Link
-            href="/portal/add?to=cold"
-            className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Add files
-          </Link>
+          <AddFilesButton
+            to="cold"
+            hasCapacity={(account?.coldBytes ?? 0) > 0}
+            currency={currency}
+          />
         }
       />
       <Faq />
@@ -171,24 +158,11 @@ export default async function PortalPage() {
             currency={currency}
             emptyHint="No files in Hot Drive yet."
             emptyAction={
-              <Link
-                href="/portal/add?to=hot"
-                className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Add files
-              </Link>
+              <AddFilesButton
+                to="hot"
+                hasCapacity={regularBytes > 0}
+                currency={currency}
+              />
             }
             endpoints={{
               move: "/api/portal/move",

@@ -35,3 +35,31 @@ body {
     background-color: #ffffff;
   }
 }
+
+/* Data "packets" travelling from each source node into the cold vault. Start
+   position is set per-dot via --fl/--ft; they converge on the centre. */
+@keyframes vault-flow {
+  0% {
+    top: var(--ft);
+    left: var(--fl);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    top: 50%;
+    left: 50%;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vault-dot {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}

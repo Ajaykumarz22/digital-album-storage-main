@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { getCurrentRole } from "@/lib/roles";
 import HeaderMenu from "./HeaderMenu";
+import NavLoader from "./NavLoader";
 
 export default async function Header() {
   const { userId } = await auth();
@@ -25,6 +26,7 @@ export default async function Header() {
           <Link href="/" className="text-lg font-semibold tracking-tight">
             Reel Pouches
           </Link>
+          <NavLoader />
         </div>
 
         <nav className="flex items-center gap-3">

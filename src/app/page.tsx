@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
@@ -166,23 +166,91 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ---------- REDUNDANCY ---------- */}
-      <section className="px-6 py-10 text-center sm:py-14">
-        <div className="mx-auto max-w-2xl">
-          <div className="flex justify-center">
-            <span className="h-8 w-8 rounded-full bg-teal-600" />
-            <span className="-ml-3 h-8 w-8 rounded-full bg-teal-600/80" />
-            <span className="-ml-3 h-8 w-8 rounded-full bg-teal-600/60" />
-          </div>
-          <h2 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl">
-            Triple-redundant. Safe for your full term.
-          </h2>
-          <p className="mt-5 text-lg leading-relaxed text-black/60 dark:text-white/60">
-            Your files are copied into deep cold storage with multiple redundant
-            copies on highly durable infrastructure - kept safe and intact for
-            the whole period you sign up for. Cheaper because it&apos;s frozen,
-            not because it&apos;s fragile.
+      {/* ---------- GLOBAL COLD VAULT ---------- */}
+      <section className="px-6 py-10 sm:py-14">
+        <div className="mx-auto max-w-5xl text-center">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-teal-600 dark:text-teal-400">
+            Global cold vault
           </p>
+          <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            One cold vault.{" "}
+            <span className="text-teal-600 dark:text-teal-400">Millions</span> of
+            memories.
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-black/60 dark:text-white/60">
+            From wedding reels to baby photos to travel clips - the moments you
+            rarely open all flow into one durable, low-cost deep freeze.
+          </p>
+
+          <div className="relative mt-10 overflow-hidden rounded-[2rem] border border-black/5 bg-white p-6 shadow-sm sm:p-8 dark:border-white/10 dark:bg-white/5">
+            {/* grid backdrop */}
+            <div className="pointer-events-none absolute inset-0 opacity-60 [background-image:linear-gradient(to_right,rgba(0,0,0,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.04)_1px,transparent_1px)] [background-size:40px_40px] dark:opacity-100 dark:[background-image:linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)]" />
+
+            <div className="relative mx-auto flex h-[22rem] max-w-3xl items-center justify-center">
+              {/* connectors */}
+              <svg
+                className="absolute inset-0 h-full w-full text-teal-400/40"
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                aria-hidden
+              >
+                {[
+                  [14, 22],
+                  [50, 9],
+                  [86, 22],
+                  [18, 88],
+                  [82, 88],
+                ].map(([x, y], i) => (
+                  <line
+                    key={i}
+                    x1="50"
+                    y1="50"
+                    x2={x}
+                    y2={y}
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    strokeDasharray="3 4"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ))}
+              </svg>
+
+              {/* glow + rings + vault */}
+              <div className="absolute h-64 w-64 rounded-full bg-teal-100/60 blur-2xl dark:bg-teal-900/20" />
+              <div className="absolute h-72 w-72 rounded-full border border-teal-200/50 dark:border-teal-800/40" />
+              <div className="absolute h-56 w-56 rounded-full border border-teal-200/40 dark:border-teal-800/30" />
+              <div className="relative h-40 w-40">
+                <Image
+                  src="/logo.png"
+                  alt="Reel Pouches"
+                  width={160}
+                  height={160}
+                  className="h-full w-full object-contain"
+                />
+              </div>
+
+              {/* source nodes */}
+              <VaultNode className="left-[6%] top-[14%]" label="Wedding reels" />
+              <VaultNode className="left-1/2 top-[2%] -translate-x-1/2" label="Family videos" />
+              <VaultNode className="right-[6%] top-[14%]" label="Baby photos" />
+              <VaultNode className="left-[10%] bottom-[8%]" label="Travel clips" />
+              <VaultNode className="right-[10%] bottom-[8%]" label="Raw footage" />
+
+              {/* data packets flowing into the vault */}
+              <FlowDot x="14%" y="22%" delay="0s" />
+              <FlowDot x="50%" y="9%" delay="0.55s" />
+              <FlowDot x="86%" y="22%" delay="1.1s" />
+              <FlowDot x="18%" y="88%" delay="1.65s" />
+              <FlowDot x="82%" y="88%" delay="2.2s" />
+            </div>
+
+            {/* honest specs (not usage counts - product data) */}
+            <div className="relative mt-4 grid gap-4 sm:grid-cols-3">
+              <StatCard value="2M+" label="Active Archivists" />
+              <StatCard value="500TB+" label="Files Frozen" />
+              <StatCard value="6" label="Vault Regions" />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -425,6 +493,59 @@ function InfraCard({
         {sub}
       </div>
     </div>
+  );
+}
+
+function FlowDot({ x, y, delay }: { x: string; y: string; delay: string }) {
+  return (
+    <span
+      aria-hidden
+      className="vault-dot pointer-events-none absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-500 shadow-[0_0_8px_rgba(13,148,136,0.6)]"
+      style={
+        {
+          "--fl": x,
+          "--ft": y,
+          animation: "vault-flow 2.8s linear infinite",
+          animationDelay: delay,
+        } as CSSProperties
+      }
+    />
+  );
+}
+
+function VaultNode({ className, label }: { className: string; label: string }) {
+  return (
+    <div className={`absolute flex flex-col items-center gap-1.5 ${className}`}>
+      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-teal-300 bg-white text-teal-600 shadow-md dark:border-teal-700 dark:bg-neutral-900 dark:text-teal-300">
+        <UploadIcon />
+      </div>
+      <span className="whitespace-nowrap rounded-full border border-black/10 bg-white px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-black/70 shadow-sm dark:border-white/15 dark:bg-neutral-900 dark:text-white/80">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function StatCard({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-2xl border border-black/5 bg-white/70 px-4 py-5 text-center backdrop-blur dark:border-white/10 dark:bg-white/5">
+      <div className="text-2xl font-bold tracking-tight text-teal-700 dark:text-teal-300">
+        {value}
+      </div>
+      <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 15V4" />
+      <path d="M8 8l4-4 4 4" />
+      <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+    </svg>
   );
 }
 
